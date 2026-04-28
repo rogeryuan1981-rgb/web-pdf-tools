@@ -275,14 +275,14 @@
         function setTool(tool) {
             currentTool = tool;
             if (tool === 'whiteout') {
-                toolWhiteoutBtn.className = "px-3 py-1.5 text-sm font-medium rounded-md bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400";
-                toolTextBtn.className = "px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900";
+                toolWhiteoutBtn.className = "px-3 py-1.5 text-sm font-medium rounded-md bg-white dark:bg-gray-700 shadow shadow-sm text-blue-600 dark:text-blue-400 transition-colors";
+                toolTextBtn.className = "px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors";
                 textSettings.classList.add('hidden');
                 textSettings.classList.remove('flex');
                 overlayCanvas.style.cursor = 'crosshair';
             } else {
                 toolTextBtn.className = "px-3 py-1.5 text-sm font-medium rounded-md bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400";
-                toolWhiteoutBtn.className = "px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900";
+                toolWhiteoutBtn.className = "px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors";
                 textSettings.classList.remove('hidden');
                 textSettings.classList.add('flex');
                 overlayCanvas.style.cursor = 'text';
@@ -302,8 +302,8 @@
             activeEditPageIdx = pageIndex;
             if (!pageEdits[pageIndex]) pageEdits[pageIndex] = { whiteouts: [], texts: [] };
 
-            // 使用 pdf.js 渲染高解析度底圖
-            const pdf = await pdfjsLib.getDocument({data: currentPdfBytes}).promise;
+            // 使用 pdf.js 渲染高解析度底圖 (加入 .slice(0) 複製 Buffer，避免被 Worker 鎖死導致無效)
+            const pdf = await pdfjsLib.getDocument({data: currentPdfBytes.slice(0)}).promise;
             const page = await pdf.getPage(pageIndex + 1);
             
             // 根據螢幕高度動態調整縮放比例，避免太大超出記憶體
@@ -327,7 +327,7 @@
             editModal.classList.remove('flex');
             activeEditPageIdx = null;
             // 通知該頁面卡片更新樣式 (表示有編輯過)
-            renderThumbnails(currentPdfBytes); // 偷懶做法：全畫面重繪以更新標籤
+            renderThumbnails(currentPdfBytes); 
         };
 
         document.getElementById('clearEditsBtn').onclick = () => {
@@ -352,9 +352,8 @@
             const currentX = e.clientX - rect.left;
             const currentY = e.clientY - rect.top;
             
-            redrawOverlay(); // 清空並重繪已儲存的軌跡
+            redrawOverlay(); 
             
-            // 繪製當前拖曳中的暫存矩形 (半透明藍色框以利辨識)
             overlayCtx.fillStyle = 'white';
             overlayCtx.fillRect(startX, startY, currentX - startX, currentY - startY);
             overlayCtx.strokeStyle = 'rgba(59, 130, 246, 0.5)';
@@ -372,19 +371,15 @@
                 const width = endX - startX;
                 const height = endY - startY;
                 
-                // 忽略太小的誤觸
                 if (Math.abs(width) > 5 && Math.abs(height) > 5) {
-                    // 將 Canvas 座標轉換回 PDF 的標準點座標 (1 point = 1/72 inch)
-                    // 注意：PDF-lib 的 Y 軸原點在左下角！
                     const pdfX = Math.min(startX, endX) / viewportScale;
                     const pdfW = Math.abs(width) / viewportScale;
                     const pdfH = Math.abs(height) / viewportScale;
-                    // top Y in canvas -> top Y in PDF from top -> convert to bottom-origin Y
                     const pdfY_TopFromBottom = (overlayCanvas.height - Math.min(startY, endY)) / viewportScale; 
 
                     pageEdits[activeEditPageIdx].whiteouts.push({
                         x: pdfX,
-                        y: pdfY_TopFromBottom - pdfH, // PDF drawRectangle uses bottom-left corner
+                        y: pdfY_TopFromBottom - pdfH, 
                         w: pdfW,
                         h: pdfH
                     });
@@ -392,20 +387,18 @@
                 redrawOverlay();
             } 
             else if (currentTool === 'text') {
-                // 點擊新增文字
                 const text = prompt("請輸入要新增的文字：");
                 if (text && text.trim() !== "") {
                     const color = document.getElementById('editTextColor').value;
                     const size = parseInt(document.getElementById('editFontSize').value);
                     
                     const pdfX = endX / viewportScale;
-                    // 將點擊位置視為文字的左上角，轉換為 PDF bottom-origin
                     const pdfY_TopFromBottom = (overlayCanvas.height - endY) / viewportScale;
 
                     pageEdits[activeEditPageIdx].texts.push({
                         text: text,
                         x: pdfX,
-                        y: pdfY_TopFromBottom, // 稍後匯出時會根據高度動態調整
+                        y: pdfY_TopFromBottom, 
                         size: size,
                         color: color
                     });
@@ -414,29 +407,24 @@
             }
         });
 
-        // 重新繪製覆蓋層 (將記錄的座標轉換回 Canvas 預覽顯示)
         function redrawOverlay() {
             overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
             const edits = pageEdits[activeEditPageIdx];
             if(!edits) return;
 
-            // 畫立可白
             edits.whiteouts.forEach(rect => {
                 const cvsX = rect.x * viewportScale;
                 const cvsW = rect.w * viewportScale;
                 const cvsH = rect.h * viewportScale;
-                // PDF bottom-origin to Canvas top-origin
                 const cvsY = overlayCanvas.height - ((rect.y + rect.h) * viewportScale);
 
                 overlayCtx.fillStyle = 'white';
                 overlayCtx.fillRect(cvsX, cvsY, cvsW, cvsH);
-                // 畫個淺色邊框提示使用者這邊有立可白
                 overlayCtx.strokeStyle = 'rgba(200,200,200,0.5)';
                 overlayCtx.lineWidth = 1;
                 overlayCtx.strokeRect(cvsX, cvsY, cvsW, cvsH);
             });
 
-            // 畫文字
             edits.texts.forEach(txt => {
                 const cvsX = txt.x * viewportScale;
                 const cvsY = overlayCanvas.height - (txt.y * viewportScale);
@@ -449,9 +437,8 @@
             });
         }
 
-
         // ==========================================
-        // 核心載入與 UI (階段 1 & 2)
+        // 核心載入與 UI
         // ==========================================
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             html.classList.add('dark');
@@ -493,7 +480,7 @@
                 
                 pageRotations = {};
                 selectedPages.clear();
-                pageEdits = {}; // 重置編輯紀錄
+                pageEdits = {}; 
 
                 document.getElementById('fileNameDisplay').textContent = outputFileName;
                 document.getElementById('pageCountDisplay').textContent = `共 ${currentPdfDoc.getPageCount()} 頁`;
@@ -513,7 +500,7 @@
 
         async function renderThumbnails(pdfBytes) {
             thumbnailsContainer.innerHTML = ''; 
-            const pdf = await pdfjsLib.getDocument({data: pdfBytes}).promise;
+            const pdf = await pdfjsLib.getDocument({data: pdfBytes.slice(0)}).promise;
             
             for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                 const pageIndex = pageNum - 1;
@@ -542,23 +529,39 @@
                 const canvas = document.createElement('canvas');
                 canvas.className = "max-w-full max-h-full transition-transform duration-300";
                 
-                // 編輯按鈕 (階段 5 新增)
+                // 編輯按鈕 - 已加入防冒泡防干擾 e.stopPropagation() 與 Loading 效果
                 const editBtn = document.createElement('button');
-                editBtn.className = "absolute top-2 right-10 p-1.5 bg-blue-50 text-blue-600 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-blue-100 border border-blue-200";
+                editBtn.className = "absolute top-2 right-10 p-1.5 bg-blue-50 text-blue-600 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-blue-100 border border-blue-200 flex items-center justify-center";
                 editBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>';
                 editBtn.title = "進入單頁進階編輯 (立可白/新增文字)";
-                editBtn.onclick = (e) => { e.preventDefault(); openEditModal(pageIndex); };
+                editBtn.onclick = async (e) => { 
+                    e.preventDefault(); 
+                    e.stopPropagation(); // 阻止事件冒泡到 Label 觸發勾選
+                    const oldHTML = editBtn.innerHTML;
+                    editBtn.innerHTML = '<div class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>'; // Loading 視覺反饋
+                    try {
+                        await openEditModal(pageIndex);
+                    } catch (err) {
+                        console.error(err);
+                        alert("開啟編輯模式失敗");
+                    } finally {
+                        editBtn.innerHTML = oldHTML; // 恢復 Icon
+                    }
+                };
 
                 // 旋轉按鈕
                 const rotateBtn = document.createElement('button');
-                rotateBtn.className = "absolute top-2 right-2 p-1.5 bg-white/90 text-gray-700 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-gray-100 border border-gray-200";
+                rotateBtn.className = "absolute top-2 right-2 p-1.5 bg-white/90 text-gray-700 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-gray-100 border border-gray-200 flex items-center justify-center";
                 rotateBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>';
-                rotateBtn.onclick = (e) => { e.preventDefault(); rotatePage(pageIndex, canvas); };
+                rotateBtn.onclick = (e) => { 
+                    e.preventDefault(); 
+                    e.stopPropagation(); // 阻止事件冒泡到 Label 觸發勾選
+                    rotatePage(pageIndex, canvas); 
+                };
 
-                // 若該頁面有編輯紀錄，顯示提示圖示
                 let editBadge = '';
                 if (pageEdits[pageIndex] && (pageEdits[pageIndex].whiteouts.length > 0 || pageEdits[pageIndex].texts.length > 0)) {
-                    editBadge = '<span class="absolute top-2 left-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded shadow">已編輯</span>';
+                    editBadge = '<span class="absolute top-2 left-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded shadow z-10">已編輯</span>';
                 }
 
                 const pageLabel = document.createElement('div');
@@ -668,7 +671,6 @@
                 if (pageEdits[originalIdx]) {
                     const edits = pageEdits[originalIdx];
                     
-                    // 立可白矩形
                     edits.whiteouts.forEach(rect => {
                         page.drawRectangle({
                             x: rect.x, y: rect.y, width: rect.w, height: rect.h,
@@ -676,27 +678,24 @@
                         });
                     });
 
-                    // 新增文字 (將文字利用 Canvas 轉為圖片 PNG，藉此完美支援繁體中文與系統字型！)
                     for (const txt of edits.texts) {
                         const tCanvas = document.createElement('canvas');
                         const tCtx = tCanvas.getContext('2d');
-                        // 使用高解析度渲染文字避免模糊
                         const scale = 4; 
                         const fontSize = txt.size * scale;
                         tCtx.font = `bold ${fontSize}px sans-serif`;
                         
                         const metrics = tCtx.measureText(txt.text);
-                        tCanvas.width = metrics.width + 20; // 留點邊距
+                        tCanvas.width = metrics.width + 20; 
                         tCanvas.height = fontSize * 1.5;
 
-                        tCtx.font = `bold ${fontSize}px sans-serif`; // 調整大小後需重設
+                        tCtx.font = `bold ${fontSize}px sans-serif`; 
                         tCtx.fillStyle = txt.color;
                         tCtx.textBaseline = 'top';
                         tCtx.fillText(txt.text, 5, 5);
 
                         const textImage = await exportPdf.embedPng(tCanvas.toDataURL('image/png'));
                         
-                        // 計算 PDF 的正確高度偏移 (因為 drawImage 的起點是左下角)
                         const renderHeight = tCanvas.height / scale;
                         page.drawImage(textImage, {
                             x: txt.x, 
@@ -707,13 +706,12 @@
                     }
                 }
 
-                // 2. 套用旋轉 (在畫完自訂編輯後再旋轉，避免座標錯亂)
+                // 2. 套用旋轉
                 if (pageRotations[originalIdx]) {
                     const currentAngle = page.getRotation().angle;
                     page.setRotation(PDFLib.degrees(currentAngle + pageRotations[originalIdx]));
                 }
 
-                // 重新取得可能因旋轉改變的寬高
                 const effectiveWidth = page.getRotation().angle % 180 === 0 ? width : height;
                 const effectiveHeight = page.getRotation().angle % 180 === 0 ? height : width;
 
@@ -778,7 +776,7 @@
             } finally { downloadSelectedBtn.textContent = `匯出選取的 ${selectedPages.size} 頁`; }
         };
 
-        document.getElementById('resetBtn').onclick = () => { location.reload(); }; // 最乾淨的重置方式
+        document.getElementById('resetBtn').onclick = () => { location.reload(); }; 
     </script>
 </body>
 </html>
