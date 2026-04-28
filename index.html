@@ -3,33 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 防搜尋引擎索引，保持低調 -->
     <meta name="robots" content="noindex, nofollow">
     <title>前端 PDF 處理工具</title>
     
-    <!-- 引入 Tailwind CSS 進行現代化排版 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {}
-            }
+            theme: { extend: {} }
         }
     </script>
     
-    <!-- 載入 PDF 處理函式庫 -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     
     <style>
-        /* 自訂捲軸樣式微調 */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .dark ::-webkit-scrollbar-thumb { background: #475569; }
         
-        /* 隱藏 checkbox 預設樣式，套用自訂樣式 */
         .page-checkbox:checked + div {
             border-color: #3b82f6;
             background-color: #eff6ff;
@@ -39,7 +32,6 @@
             background-color: rgba(30, 58, 138, 0.4);
         }
 
-        /* 透明棋盤格背景 (用於預覽去背效果) */
         .bg-checkerboard {
             background-color: #f8f9fa;
             background-image: 
@@ -66,20 +58,18 @@
     <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
         <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-xl font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
-                <!-- PDF 圖示 SVG -->
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Web PDF Tools
             </h1>
-            <button id="darkModeToggle" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors" title="切換深淺色主題">
+            <button id="darkModeToggle" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors">
                 <span id="themeIcon">🌙</span>
             </button>
         </div>
     </header>
 
-    <!-- 主要內容區 -->
     <main class="flex-grow max-w-5xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
         
-        <!-- 檔案上傳區塊 -->
+        <!-- 上傳區塊 -->
         <section id="uploadSection" class="w-full flex flex-col items-center justify-center p-16 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 hover:border-blue-500 dark:hover:border-blue-400 transition-all cursor-pointer text-center group relative overflow-hidden">
             <div id="loadingOverlay" class="hidden absolute inset-0 bg-white/80 dark:bg-gray-800/80 flex-col items-center justify-center z-10">
                 <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
@@ -95,9 +85,9 @@
             <input type="file" id="pdfInput" class="hidden" accept="application/pdf" multiple>
         </section>
 
-        <!-- 工具列與工作區 -->
+        <!-- 工作區 -->
         <section id="workspaceSection" class="hidden flex-col gap-6">
-            <!-- 檔案資訊與全域操作列 -->
+            <!-- 工具列 -->
             <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl flex flex-wrap gap-4 justify-between items-center shadow-sm sticky top-20 z-20">
                 <div class="flex items-center gap-3">
                     <svg class="w-8 h-8 text-red-500" viewBox="0 0 24 24" fill="currentColor"><path d="M8.267 14.68c-.184 0-.308.018-.372.036v1.178c.076.018.171.023.302.023.479 0 .774-.242.774-.651 0-.366-.254-.586-.704-.586zm3.487.012c-.2 0-.33.018-.407.036v2.61c.077.018.201.018.313.018.817.0 1.349-.44 1.349-1.396.002-.772-.423-1.268-1.255-1.268z"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM9.498 16.19c-.309.29-.765.42-1.296.42a2.23 2.23 0 0 1-.308-.018v1.426H6.75v-3.936A7.558 7.558 0 0 1 8.21 14c.557 0 .935.128 1.165.34.205.193.307.458.307.773 0 .386-.061.806-.184 1.077zm4.32 1.436c-.361.344-.924.468-1.554.468a3.13 3.13 0 0 1-.365-.018v-3.947a5.525 5.525 0 0 1 .425-.018c.676 0 1.222.138 1.552.477.348.353.535.83.535 1.506 0 .666-.192 1.171-.593 1.532zm2.934-.515h-1.611v1.408h-1.142v-3.92h2.894v.86h-1.752v.677h1.611v.975z"/></svg>
@@ -111,10 +101,7 @@
                         匯出選取頁面 (分割)
                     </button>
                     <button id="downloadAllBtn" class="text-sm px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm relative overflow-hidden group">
-                        <span class="relative z-10 flex items-center gap-1">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                            套用並匯出檔案
-                        </span>
+                        套用並匯出檔案
                     </button>
                     <button id="resetBtn" class="text-sm px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg font-medium transition-colors">
                         重新選擇
@@ -122,8 +109,9 @@
                 </div>
             </div>
             
-            <!-- 階段 3：圖層與浮水印模組 -->
+            <!-- 模組設定區 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
                 <!-- 浮水印區塊 -->
                 <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col gap-4">
                     <div class="flex justify-between items-center">
@@ -136,23 +124,18 @@
                             <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                         </label>
                     </div>
-                    
                     <div id="wmControls" class="flex flex-col gap-3 opacity-50 pointer-events-none transition-opacity">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">浮水印文字 (建議英數)</label>
-                            <input type="text" id="wmText" placeholder="例如：CONFIDENTIAL" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        </div>
+                        <input type="text" id="wmText" placeholder="例如：CONFIDENTIAL" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">字體大小</label>
-                                <input type="number" id="wmSize" value="60" min="10" max="150" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <label class="block text-xs text-gray-500 mb-1">大小</label>
+                                <input type="number" id="wmSize" value="60" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">透明度 (0.1 ~ 1.0)</label>
-                                <input type="number" id="wmOpacity" value="0.3" min="0.1" max="1.0" step="0.1" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <label class="block text-xs text-gray-500 mb-1">透明度 (0.1-1.0)</label>
+                                <input type="number" id="wmOpacity" value="0.3" step="0.1" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none">
                             </div>
                         </div>
-                        <p class="text-xs text-gray-400">啟用後，文字將以 45 度傾斜自動置中於匯出檔案的所有頁面。</p>
                     </div>
                 </div>
 
@@ -168,36 +151,18 @@
                             <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                         </label>
                     </div>
-
                     <div id="sigControls" class="flex flex-col gap-3 opacity-50 pointer-events-none transition-opacity">
                         <div class="flex gap-2">
                             <input type="file" id="sigInput" accept="image/png, image/jpeg" class="hidden">
-                            <button id="sigUploadBtn" class="flex-grow text-sm px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium">
-                                上傳簽名圖片
-                            </button>
-                            <select id="sigPages" class="text-sm px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 focus:outline-none">
-                                <option value="all">所有頁</option>
-                                <option value="last" selected>僅末頁</option>
-                                <option value="first">僅首頁</option>
-                            </select>
-                            <select id="sigPosition" class="text-sm px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 focus:outline-none">
-                                <option value="br" selected>右下角</option>
-                                <option value="bl">左下角</option>
-                                <option value="tr">右上角</option>
-                                <option value="tl">左上角</option>
-                            </select>
+                            <button id="sigUploadBtn" class="flex-grow text-sm px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg">上傳圖片</button>
+                            <select id="sigPages" class="text-sm px-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900"><option value="all">所有頁</option><option value="last" selected>僅末頁</option><option value="first">僅首頁</option></select>
+                            <select id="sigPosition" class="text-sm px-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900"><option value="br" selected>右下</option><option value="bl">左下</option><option value="tr">右上</option><option value="tl">左上</option></select>
                         </div>
-                        
-                        <!-- 去背滑桿與預覽 -->
                         <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                            <div class="flex justify-between items-center mb-2">
-                                <label class="text-xs font-medium text-gray-500 dark:text-gray-400">去背強度 (拖曳移除白底)</label>
-                                <span id="sigToleranceVal" class="text-xs text-blue-500 font-bold">200</span>
-                            </div>
-                            <input type="range" id="sigTolerance" min="0" max="255" value="200" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 mb-3">
-                            
-                            <div class="w-full h-24 rounded border border-dashed border-gray-300 dark:border-gray-600 bg-checkerboard flex items-center justify-center overflow-hidden">
-                                <span id="sigPlaceholderText" class="text-sm text-gray-400">尚未上傳圖片</span>
+                            <div class="flex justify-between text-xs mb-2 text-gray-500"><span>去背強度</span><span id="sigToleranceVal" class="text-blue-500 font-bold">200</span></div>
+                            <input type="range" id="sigTolerance" min="0" max="255" value="200" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mb-3">
+                            <div class="w-full h-20 rounded border border-dashed border-gray-300 bg-checkerboard flex items-center justify-center overflow-hidden">
+                                <span id="sigPlaceholderText" class="text-sm text-gray-400">預覽區</span>
                                 <canvas id="sigCanvas" class="hidden max-w-full max-h-full object-contain"></canvas>
                             </div>
                         </div>
@@ -208,257 +173,347 @@
             <!-- 操作說明 -->
             <div class="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-3 rounded-lg text-sm flex items-start gap-2">
                 <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <p><strong>基礎編輯模式：</strong>卡片右上角可旋轉單頁。若要<strong>分割</strong>，請點擊勾選所需卡片；若啟用上方的「浮水印/簽名」，將會在您點擊匯出時一併套用至 PDF 中。</p>
+                <p><strong>操作提示：</strong>滑鼠移至卡片上，點選 <svg class="inline w-4 h-4 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> 可進入<strong>單頁編輯模式（立可白/加文字）</strong>；點選 ↺ 可旋轉。直接點擊卡片可勾選進行分割匯出。</p>
             </div>
 
             <!-- 縮圖預覽區 -->
-            <div id="thumbnailsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                <!-- 縮圖卡片將由 JS 產生 -->
-            </div>
+            <div id="thumbnailsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
             
-            <!-- 預留：階段 4 工具列 -->
-            <div class="mt-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-center text-gray-400 text-sm">
-                未來擴充區塊：階段 4 (密碼保護加密) 將顯示於此
-            </div>
         </section>
     </main>
 
-    <!-- 頁尾與免責聲明 -->
+    <!-- 編輯彈出視窗 (Modal) -->
+    <div id="editModal" class="fixed inset-0 z-50 hidden bg-gray-900/90 flex-col backdrop-blur-sm">
+        <!-- Toolbar -->
+        <div class="bg-white dark:bg-gray-800 shadow-md p-4 flex flex-wrap justify-between items-center z-10 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center gap-4">
+                <span class="font-bold text-lg mr-4">單頁進階編輯</span>
+                
+                <!-- 工具選擇 -->
+                <div class="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-lg">
+                    <button id="toolWhiteout" class="px-3 py-1.5 text-sm font-medium rounded-md bg-white dark:bg-gray-700 shadow shadow-sm text-blue-600 dark:text-blue-400 transition-colors">立可白 (框選)</button>
+                    <button id="toolText" class="px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">加文字 (點擊)</button>
+                </div>
+                
+                <!-- 文字設定 (僅在選擇加文字時顯示) -->
+                <div id="textSettings" class="hidden items-center gap-3 border-l border-gray-300 dark:border-gray-600 pl-4">
+                    <input type="color" id="editTextColor" value="#ff0000" class="w-8 h-8 rounded cursor-pointer border-0 p-0">
+                    <div class="flex items-center gap-1">
+                        <span class="text-sm text-gray-500">大小</span>
+                        <input type="number" id="editFontSize" value="16" min="8" max="72" class="w-16 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-sm focus:outline-none">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-2">
+                <button id="clearEditsBtn" class="px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors font-medium">清除本頁所有修改</button>
+                <button id="closeEditModalBtn" class="px-6 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-bold shadow-sm">完成並返回</button>
+            </div>
+        </div>
+        
+        <!-- Canvas Container -->
+        <div class="flex-grow overflow-auto flex justify-center items-center p-8 relative" id="editCanvasContainer">
+            <!-- baseCanvas 用於渲染原本的 PDF 頁面 -->
+            <canvas id="baseCanvas" class="shadow-2xl absolute"></canvas>
+            <!-- overlayCanvas 用於繪製使用者的操作軌跡 (透明背景) -->
+            <canvas id="overlayCanvas" class="absolute cursor-crosshair"></canvas>
+        </div>
+    </div>
+
+    <!-- 頁尾 -->
     <footer class="bg-gray-200/50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 mt-auto py-8 text-sm text-gray-600 dark:text-gray-400">
         <div class="max-w-4xl mx-auto px-4 text-center space-y-3">
             <p class="font-bold text-gray-800 dark:text-gray-200 text-base">⚠️ 隱私與免責聲明</p>
-            <p>1. 本工具為純前端本地端運算，您的檔案<strong>絕對不會</strong>上傳至任何外部伺服器，關閉網頁後資料即刻銷毀。</p>
-            <p>2. 本工具之「簽名」與「浮水印」功能僅提供圖層疊加，<strong>不具備</strong>數位憑證 (Digital Certificate) 加密驗證之法律效力。</p>
-            <p>3. 本工具僅供個人或內部測試使用，使用者需自行承擔處理機密文件或合約之法律責任。</p>
+            <p>1. 本工具為純前端本地端運算，您的檔案<strong>絕對不會</strong>上傳至任何外部伺服器。</p>
+            <p>2. 單頁編輯之「立可白/新增文字」功能僅為圖層覆蓋，並非修改 PDF 底層原始程式碼。</p>
         </div>
     </footer>
 
     <script>
-        // 設定 PDF.js worker
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
         // ==========================================
-        // 狀態管理
+        // 核心狀態
         // ==========================================
-        let currentPdfDoc = null; // 儲存最原始合併完的 PDF 狀態
-        let pageRotations = {};   // 記錄各頁面旋轉角度 { pageIndex: degree }
+        let currentPdfDoc = null; 
+        let currentPdfBytes = null; // 給 pdf.js 用的原始 byte array
+        let pageRotations = {};   
         let selectedPages = new Set(); 
         
-        // 簽名檔狀態
-        let originalSigImage = null; // 儲存使用者上傳的原始圖片物件
-        let isSigReady = false;
-
-        // ==========================================
-        // UI 元素
-        // ==========================================
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        const html = document.documentElement;
+        // 頁面編輯狀態 { pageIndex: { whiteouts: [{x, y, w, h}], texts: [{text, x, y, size, color}] } }
+        let pageEdits = {}; 
         
+        // ==========================================
+        // DOM 元素綁定
+        // ==========================================
+        const html = document.documentElement;
         const uploadSection = document.getElementById('uploadSection');
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        const pdfInput = document.getElementById('pdfInput');
         const workspaceSection = document.getElementById('workspaceSection');
-        const fileNameDisplay = document.getElementById('fileNameDisplay');
-        const pageCountDisplay = document.getElementById('pageCountDisplay');
-        const resetBtn = document.getElementById('resetBtn');
+        const pdfInput = document.getElementById('pdfInput');
+        const thumbnailsContainer = document.getElementById('thumbnailsContainer');
         const downloadAllBtn = document.getElementById('downloadAllBtn');
         const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
-        const thumbnailsContainer = document.getElementById('thumbnailsContainer');
+        
+        // ==========================================
+        // 編輯器 (Modal) 邏輯
+        // ==========================================
+        const editModal = document.getElementById('editModal');
+        const baseCanvas = document.getElementById('baseCanvas');
+        const overlayCanvas = document.getElementById('overlayCanvas');
+        const overlayCtx = overlayCanvas.getContext('2d');
+        const toolWhiteoutBtn = document.getElementById('toolWhiteout');
+        const toolTextBtn = document.getElementById('toolText');
+        const textSettings = document.getElementById('textSettings');
+        
+        let activeEditPageIdx = null;
+        let currentTool = 'whiteout'; // 'whiteout' | 'text'
+        let isDrawing = false;
+        let startX = 0, startY = 0;
+        let viewportScale = 1.5; // 編輯時放大的倍率
 
-        // 浮水印 UI
-        const enableWmCb = document.getElementById('enableWmCb');
-        const wmControls = document.getElementById('wmControls');
-        const wmText = document.getElementById('wmText');
-        const wmSize = document.getElementById('wmSize');
-        const wmOpacity = document.getElementById('wmOpacity');
+        // 切換工具按鈕樣式
+        function setTool(tool) {
+            currentTool = tool;
+            if (tool === 'whiteout') {
+                toolWhiteoutBtn.className = "px-3 py-1.5 text-sm font-medium rounded-md bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400";
+                toolTextBtn.className = "px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900";
+                textSettings.classList.add('hidden');
+                textSettings.classList.remove('flex');
+                overlayCanvas.style.cursor = 'crosshair';
+            } else {
+                toolTextBtn.className = "px-3 py-1.5 text-sm font-medium rounded-md bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400";
+                toolWhiteoutBtn.className = "px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900";
+                textSettings.classList.remove('hidden');
+                textSettings.classList.add('flex');
+                overlayCanvas.style.cursor = 'text';
+            }
+        }
 
-        // 簽名檔 UI
-        const enableSigCb = document.getElementById('enableSigCb');
-        const sigControls = document.getElementById('sigControls');
-        const sigUploadBtn = document.getElementById('sigUploadBtn');
-        const sigInput = document.getElementById('sigInput');
-        const sigPages = document.getElementById('sigPages');
-        const sigPosition = document.getElementById('sigPosition');
-        const sigTolerance = document.getElementById('sigTolerance');
-        const sigToleranceVal = document.getElementById('sigToleranceVal');
-        const sigCanvas = document.getElementById('sigCanvas');
-        const sigPlaceholderText = document.getElementById('sigPlaceholderText');
-        const sigCtx = sigCanvas.getContext('2d');
+        toolWhiteoutBtn.onclick = () => setTool('whiteout');
+        toolTextBtn.onclick = () => setTool('text');
+
+        // 開啟編輯器
+        async function openEditModal(pageIndex) {
+            if (pageRotations[pageIndex]) {
+                alert("⚠️ 為了確保座標正確，請先將頁面旋轉角度重置為 0 度，才能進入編輯模式。");
+                return;
+            }
+            
+            activeEditPageIdx = pageIndex;
+            if (!pageEdits[pageIndex]) pageEdits[pageIndex] = { whiteouts: [], texts: [] };
+
+            // 使用 pdf.js 渲染高解析度底圖
+            const pdf = await pdfjsLib.getDocument({data: currentPdfBytes}).promise;
+            const page = await pdf.getPage(pageIndex + 1);
+            
+            // 根據螢幕高度動態調整縮放比例，避免太大超出記憶體
+            const viewportObj = page.getViewport({scale: 1.0});
+            viewportScale = Math.min(2.0, (window.innerHeight * 0.8) / viewportObj.height);
+            const viewport = page.getViewport({scale: viewportScale});
+
+            baseCanvas.width = overlayCanvas.width = viewport.width;
+            baseCanvas.height = overlayCanvas.height = viewport.height;
+
+            const baseCtx = baseCanvas.getContext('2d');
+            await page.render({ canvasContext: baseCtx, viewport: viewport }).promise;
+
+            redrawOverlay();
+            editModal.classList.remove('hidden');
+            editModal.classList.add('flex');
+        }
+
+        document.getElementById('closeEditModalBtn').onclick = () => {
+            editModal.classList.add('hidden');
+            editModal.classList.remove('flex');
+            activeEditPageIdx = null;
+            // 通知該頁面卡片更新樣式 (表示有編輯過)
+            renderThumbnails(currentPdfBytes); // 偷懶做法：全畫面重繪以更新標籤
+        };
+
+        document.getElementById('clearEditsBtn').onclick = () => {
+            if(confirm("確定要清除這頁的所有手動修改嗎？")) {
+                pageEdits[activeEditPageIdx] = { whiteouts: [], texts: [] };
+                redrawOverlay();
+            }
+        };
+
+        // Canvas 滑鼠事件處理 (繪圖核心)
+        overlayCanvas.addEventListener('mousedown', (e) => {
+            if (currentTool !== 'whiteout') return;
+            isDrawing = true;
+            const rect = overlayCanvas.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+        });
+
+        overlayCanvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing || currentTool !== 'whiteout') return;
+            const rect = overlayCanvas.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            redrawOverlay(); // 清空並重繪已儲存的軌跡
+            
+            // 繪製當前拖曳中的暫存矩形 (半透明藍色框以利辨識)
+            overlayCtx.fillStyle = 'white';
+            overlayCtx.fillRect(startX, startY, currentX - startX, currentY - startY);
+            overlayCtx.strokeStyle = 'rgba(59, 130, 246, 0.5)';
+            overlayCtx.lineWidth = 2;
+            overlayCtx.strokeRect(startX, startY, currentX - startX, currentY - startY);
+        });
+
+        overlayCanvas.addEventListener('mouseup', (e) => {
+            const rect = overlayCanvas.getBoundingClientRect();
+            const endX = e.clientX - rect.left;
+            const endY = e.clientY - rect.top;
+
+            if (currentTool === 'whiteout' && isDrawing) {
+                isDrawing = false;
+                const width = endX - startX;
+                const height = endY - startY;
+                
+                // 忽略太小的誤觸
+                if (Math.abs(width) > 5 && Math.abs(height) > 5) {
+                    // 將 Canvas 座標轉換回 PDF 的標準點座標 (1 point = 1/72 inch)
+                    // 注意：PDF-lib 的 Y 軸原點在左下角！
+                    const pdfX = Math.min(startX, endX) / viewportScale;
+                    const pdfW = Math.abs(width) / viewportScale;
+                    const pdfH = Math.abs(height) / viewportScale;
+                    // top Y in canvas -> top Y in PDF from top -> convert to bottom-origin Y
+                    const pdfY_TopFromBottom = (overlayCanvas.height - Math.min(startY, endY)) / viewportScale; 
+
+                    pageEdits[activeEditPageIdx].whiteouts.push({
+                        x: pdfX,
+                        y: pdfY_TopFromBottom - pdfH, // PDF drawRectangle uses bottom-left corner
+                        w: pdfW,
+                        h: pdfH
+                    });
+                }
+                redrawOverlay();
+            } 
+            else if (currentTool === 'text') {
+                // 點擊新增文字
+                const text = prompt("請輸入要新增的文字：");
+                if (text && text.trim() !== "") {
+                    const color = document.getElementById('editTextColor').value;
+                    const size = parseInt(document.getElementById('editFontSize').value);
+                    
+                    const pdfX = endX / viewportScale;
+                    // 將點擊位置視為文字的左上角，轉換為 PDF bottom-origin
+                    const pdfY_TopFromBottom = (overlayCanvas.height - endY) / viewportScale;
+
+                    pageEdits[activeEditPageIdx].texts.push({
+                        text: text,
+                        x: pdfX,
+                        y: pdfY_TopFromBottom, // 稍後匯出時會根據高度動態調整
+                        size: size,
+                        color: color
+                    });
+                    redrawOverlay();
+                }
+            }
+        });
+
+        // 重新繪製覆蓋層 (將記錄的座標轉換回 Canvas 預覽顯示)
+        function redrawOverlay() {
+            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            const edits = pageEdits[activeEditPageIdx];
+            if(!edits) return;
+
+            // 畫立可白
+            edits.whiteouts.forEach(rect => {
+                const cvsX = rect.x * viewportScale;
+                const cvsW = rect.w * viewportScale;
+                const cvsH = rect.h * viewportScale;
+                // PDF bottom-origin to Canvas top-origin
+                const cvsY = overlayCanvas.height - ((rect.y + rect.h) * viewportScale);
+
+                overlayCtx.fillStyle = 'white';
+                overlayCtx.fillRect(cvsX, cvsY, cvsW, cvsH);
+                // 畫個淺色邊框提示使用者這邊有立可白
+                overlayCtx.strokeStyle = 'rgba(200,200,200,0.5)';
+                overlayCtx.lineWidth = 1;
+                overlayCtx.strokeRect(cvsX, cvsY, cvsW, cvsH);
+            });
+
+            // 畫文字
+            edits.texts.forEach(txt => {
+                const cvsX = txt.x * viewportScale;
+                const cvsY = overlayCanvas.height - (txt.y * viewportScale);
+                const cvsSize = txt.size * viewportScale;
+
+                overlayCtx.font = `${cvsSize}px sans-serif`;
+                overlayCtx.fillStyle = txt.color;
+                overlayCtx.textBaseline = 'top';
+                overlayCtx.fillText(txt.text, cvsX, cvsY);
+            });
+        }
+
 
         // ==========================================
-        // 主題切換邏輯
+        // 核心載入與 UI (階段 1 & 2)
         // ==========================================
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             html.classList.add('dark');
-            themeIcon.textContent = '☀️';
-        } else {
-            html.classList.remove('dark');
-            themeIcon.textContent = '🌙';
         }
 
-        darkModeToggle.addEventListener('click', () => {
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.theme = 'light';
-                themeIcon.textContent = '🌙';
-            } else {
-                html.classList.add('dark');
-                localStorage.theme = 'dark';
-                themeIcon.textContent = '☀️';
-            }
+        document.getElementById('darkModeToggle').addEventListener('click', () => {
+            html.classList.toggle('dark');
+            localStorage.theme = html.classList.contains('dark') ? 'dark' : 'light';
         });
 
-        // ==========================================
-        // 階段 3：面板開關視覺邏輯
-        // ==========================================
-        enableWmCb.addEventListener('change', (e) => {
-            if(e.target.checked) wmControls.classList.remove('opacity-50', 'pointer-events-none');
-            else wmControls.classList.add('opacity-50', 'pointer-events-none');
-        });
-
-        enableSigCb.addEventListener('change', (e) => {
-            if(e.target.checked) sigControls.classList.remove('opacity-50', 'pointer-events-none');
-            else sigControls.classList.add('opacity-50', 'pointer-events-none');
-        });
-
-        // ==========================================
-        // 階段 3：簽名檔上傳與去背邏輯 (Canvas)
-        // ==========================================
-        sigUploadBtn.addEventListener('click', () => sigInput.click());
-
-        sigInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const img = new Image();
-                img.onload = () => {
-                    originalSigImage = img;
-                    sigPlaceholderText.classList.add('hidden');
-                    sigCanvas.classList.remove('hidden');
-                    processSignatureBackground(); // 處理去背
-                    isSigReady = true;
-                };
-                img.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-
-        sigTolerance.addEventListener('input', (e) => {
-            sigToleranceVal.textContent = e.target.value;
-            if (originalSigImage) processSignatureBackground();
-        });
-
-        function processSignatureBackground() {
-            if (!originalSigImage) return;
-            
-            const threshold = parseInt(sigTolerance.value);
-            sigCanvas.width = originalSigImage.width;
-            sigCanvas.height = originalSigImage.height;
-            
-            // 將原始圖片畫入 Canvas
-            sigCtx.drawImage(originalSigImage, 0, 0);
-            
-            // 取得像素資料
-            const imgData = sigCtx.getImageData(0, 0, sigCanvas.width, sigCanvas.height);
-            const data = imgData.data;
-
-            // 亮度門檻去背演算法：若 RGB 都大於 threshold，則認定為背景，將 Alpha 設為 0
-            for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i+1];
-                const b = data[i+2];
-                if (r >= threshold && g >= threshold && b >= threshold) {
-                    data[i+3] = 0; // 變透明
-                }
-            }
-            
-            // 將去背後的資料放回 Canvas 預覽
-            sigCtx.putImageData(imgData, 0, 0);
-        }
-
-        // ==========================================
-        // 檔案上傳與拖曳邏輯 (階段 1 & 2)
-        // ==========================================
         uploadSection.addEventListener('click', () => pdfInput.click());
-
-        uploadSection.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadSection.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
-        });
-        uploadSection.addEventListener('dragleave', () => {
-            uploadSection.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
-        });
-
+        uploadSection.addEventListener('dragover', (e) => { e.preventDefault(); });
         uploadSection.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadSection.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
             if (e.dataTransfer.files.length > 0) {
-                const validFiles = Array.from(e.dataTransfer.files).filter(file => file.type === 'application/pdf');
-                if (validFiles.length > 0) {
-                    const dataTransfer = new DataTransfer();
-                    validFiles.forEach(file => dataTransfer.items.add(file));
-                    pdfInput.files = dataTransfer.files;
-                    handleFilesSelected();
-                } else {
-                    alert('請上傳 PDF 格式的檔案！');
-                }
+                pdfInput.files = e.dataTransfer.files;
+                handleFilesSelected();
             }
         });
-
-        pdfInput.addEventListener('change', () => {
-            if (pdfInput.files.length > 0) handleFilesSelected();
-        });
+        pdfInput.addEventListener('change', () => { if (pdfInput.files.length > 0) handleFilesSelected(); });
 
         async function handleFilesSelected() {
-            if (pdfInput.files.length === 0) return;
-            loadingOverlay.classList.remove('hidden');
-            loadingOverlay.classList.add('flex');
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            document.getElementById('loadingOverlay').classList.add('flex');
 
             try {
                 const mergedPdf = await PDFLib.PDFDocument.create();
-                let outputFileName = "";
+                let outputFileName = pdfInput.files.length > 1 ? "Merged_" + pdfInput.files[0].name : pdfInput.files[0].name;
 
                 for (let i = 0; i < pdfInput.files.length; i++) {
-                    const file = pdfInput.files[i];
-                    if (i === 0) outputFileName = pdfInput.files.length > 1 ? "Merged_" + file.name : file.name;
-                    
-                    const arrayBuffer = await file.arrayBuffer();
+                    const arrayBuffer = await pdfInput.files[i].arrayBuffer();
                     const pdf = await PDFLib.PDFDocument.load(arrayBuffer);
                     const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-                    copiedPages.forEach((page) => mergedPdf.addPage(page));
+                    copiedPages.forEach(page => mergedPdf.addPage(page));
                 }
 
-                currentPdfDoc = mergedPdf; 
+                currentPdfDoc = mergedPdf;
+                currentPdfBytes = await mergedPdf.save();
+                
                 pageRotations = {};
                 selectedPages.clear();
-                updateDownloadButtons();
+                pageEdits = {}; // 重置編輯紀錄
 
-                fileNameDisplay.textContent = outputFileName;
-                pageCountDisplay.textContent = `共 ${currentPdfDoc.getPageCount()} 頁`;
+                document.getElementById('fileNameDisplay').textContent = outputFileName;
+                document.getElementById('pageCountDisplay').textContent = `共 ${currentPdfDoc.getPageCount()} 頁`;
                 
-                const pdfBytes = await mergedPdf.save();
-                await renderThumbnails(pdfBytes);
+                await renderThumbnails(currentPdfBytes);
 
                 uploadSection.classList.add('hidden');
                 workspaceSection.classList.remove('hidden');
                 workspaceSection.classList.add('flex');
-
             } catch (error) {
-                console.error("PDF 處理失敗:", error);
-                alert("處理 PDF 時發生錯誤，請確認檔案是否已損毀或有加密保護。");
+                alert("處理發生錯誤，請確認檔案是否有加密。");
             } finally {
-                loadingOverlay.classList.add('hidden');
-                loadingOverlay.classList.remove('flex');
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                document.getElementById('loadingOverlay').classList.remove('flex');
             }
         }
 
         async function renderThumbnails(pdfBytes) {
             thumbnailsContainer.innerHTML = ''; 
-            const loadingTask = pdfjsLib.getDocument({data: pdfBytes});
-            const pdf = await loadingTask.promise;
+            const pdf = await pdfjsLib.getDocument({data: pdfBytes}).promise;
             
             for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                 const pageIndex = pageNum - 1;
@@ -472,238 +527,258 @@
                 checkbox.type = "checkbox";
                 checkbox.className = "hidden page-checkbox";
                 checkbox.value = pageIndex;
-                checkbox.addEventListener('change', (e) => {
-                    if (e.target.checked) selectedPages.add(pageIndex);
-                    else selectedPages.delete(pageIndex);
-                    updateDownloadButtons();
-                });
+                checkbox.onchange = (e) => {
+                    e.target.checked ? selectedPages.add(pageIndex) : selectedPages.delete(pageIndex);
+                    downloadSelectedBtn.classList.toggle('hidden', selectedPages.size === 0);
+                    downloadSelectedBtn.textContent = `匯出選取的 ${selectedPages.size} 頁`;
+                };
 
                 const cardInner = document.createElement('div');
-                cardInner.className = "border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg overflow-hidden transition-all relative shadow-sm hover:shadow-md";
+                cardInner.className = "border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg overflow-hidden relative shadow hover:shadow-md";
                 
                 const canvasWrapper = document.createElement('div');
-                canvasWrapper.className = "flex items-center justify-center p-2 bg-gray-100 dark:bg-gray-900 h-40 overflow-hidden";
+                canvasWrapper.className = "flex items-center justify-center p-2 bg-gray-100 dark:bg-gray-900 h-40 overflow-hidden relative";
                 
                 const canvas = document.createElement('canvas');
                 canvas.className = "max-w-full max-h-full transition-transform duration-300";
                 
+                // 編輯按鈕 (階段 5 新增)
+                const editBtn = document.createElement('button');
+                editBtn.className = "absolute top-2 right-10 p-1.5 bg-blue-50 text-blue-600 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-blue-100 border border-blue-200";
+                editBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>';
+                editBtn.title = "進入單頁進階編輯 (立可白/新增文字)";
+                editBtn.onclick = (e) => { e.preventDefault(); openEditModal(pageIndex); };
+
+                // 旋轉按鈕
                 const rotateBtn = document.createElement('button');
-                rotateBtn.className = "absolute top-2 right-2 p-1.5 bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 rounded-md shadow backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100 dark:hover:bg-gray-700 z-10 border border-gray-200 dark:border-gray-600";
+                rotateBtn.className = "absolute top-2 right-2 p-1.5 bg-white/90 text-gray-700 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-gray-100 border border-gray-200";
                 rotateBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>';
-                rotateBtn.title = "順時針旋轉 90 度";
-                rotateBtn.onclick = (e) => {
-                    e.preventDefault(); 
-                    rotatePage(pageIndex, canvas);
-                };
+                rotateBtn.onclick = (e) => { e.preventDefault(); rotatePage(pageIndex, canvas); };
+
+                // 若該頁面有編輯紀錄，顯示提示圖示
+                let editBadge = '';
+                if (pageEdits[pageIndex] && (pageEdits[pageIndex].whiteouts.length > 0 || pageEdits[pageIndex].texts.length > 0)) {
+                    editBadge = '<span class="absolute top-2 left-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded shadow">已編輯</span>';
+                }
 
                 const pageLabel = document.createElement('div');
-                pageLabel.className = "text-center py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700";
-                pageLabel.textContent = `第 ${pageNum} 頁`;
+                pageLabel.className = "text-center py-1.5 text-xs font-medium text-gray-600 bg-white border-t border-gray-100 relative";
+                pageLabel.innerHTML = `${editBadge} 第 ${pageNum} 頁`;
 
                 const context = canvas.getContext('2d');
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
-                
                 await page.render({ canvasContext: context, viewport: viewport }).promise;
 
                 canvasWrapper.appendChild(canvas);
-                cardInner.appendChild(canvasWrapper);
-                cardInner.appendChild(rotateBtn);
-                cardInner.appendChild(pageLabel);
-                card.appendChild(checkbox);
-                card.appendChild(cardInner);
+                cardInner.append(canvasWrapper, editBtn, rotateBtn, pageLabel);
+                card.append(checkbox, cardInner);
                 thumbnailsContainer.appendChild(card);
             }
         }
 
         function rotatePage(pageIndex, canvasElement) {
-            let currentRotation = pageRotations[pageIndex] || 0;
-            currentRotation = (currentRotation + 90) % 360;
-            pageRotations[pageIndex] = currentRotation;
-            canvasElement.style.transform = `rotate(${currentRotation}deg)`;
-            if (currentRotation === 90 || currentRotation === 270) {
+            let rot = (pageRotations[pageIndex] || 0) + 90;
+            pageRotations[pageIndex] = rot % 360;
+            canvasElement.style.transform = `rotate(${rot}deg)`;
+            if (rot % 180 !== 0) {
                 const scale = Math.min(canvasElement.parentElement.offsetWidth / canvasElement.height, canvasElement.parentElement.offsetHeight / canvasElement.width) * 0.9;
                 canvasElement.style.transform += ` scale(${scale})`;
             }
         }
 
-        function updateDownloadButtons() {
-            if (selectedPages.size > 0) {
-                downloadSelectedBtn.classList.remove('hidden');
-                downloadSelectedBtn.textContent = `匯出選取的 ${selectedPages.size} 頁`;
-            } else {
-                downloadSelectedBtn.classList.add('hidden');
+        // ==========================================
+        // 浮水印與簽名狀態處理
+        // ==========================================
+        let isSigReady = false;
+        let originalSigImage = null;
+        const sigCanvas = document.getElementById('sigCanvas');
+        const sigCtx = sigCanvas.getContext('2d');
+
+        document.getElementById('enableWmCb').onchange = (e) => document.getElementById('wmControls').classList.toggle('opacity-50', !e.target.checked);
+        document.getElementById('enableWmCb').onchange = (e) => document.getElementById('wmControls').classList.toggle('pointer-events-none', !e.target.checked);
+        
+        document.getElementById('enableSigCb').onchange = (e) => document.getElementById('sigControls').classList.toggle('opacity-50', !e.target.checked);
+        document.getElementById('enableSigCb').onchange = (e) => document.getElementById('sigControls').classList.toggle('pointer-events-none', !e.target.checked);
+
+        document.getElementById('sigUploadBtn').onclick = () => document.getElementById('sigInput').click();
+        document.getElementById('sigInput').onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalSigImage = img;
+                    document.getElementById('sigPlaceholderText').classList.add('hidden');
+                    sigCanvas.classList.remove('hidden');
+                    processSignatureBackground();
+                    isSigReady = true;
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        document.getElementById('sigTolerance').oninput = (e) => {
+            document.getElementById('sigToleranceVal').textContent = e.target.value;
+            if (originalSigImage) processSignatureBackground();
+        };
+
+        function processSignatureBackground() {
+            const threshold = parseInt(document.getElementById('sigTolerance').value);
+            sigCanvas.width = originalSigImage.width;
+            sigCanvas.height = originalSigImage.height;
+            sigCtx.drawImage(originalSigImage, 0, 0);
+            const imgData = sigCtx.getImageData(0, 0, sigCanvas.width, sigCanvas.height);
+            const data = imgData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i] >= threshold && data[i+1] >= threshold && data[i+2] >= threshold) {
+                    data[i+3] = 0; 
+                }
             }
+            sigCtx.putImageData(imgData, 0, 0);
         }
 
         // ==========================================
-        // 核心匯出與圖層疊加處理引擎 (非破壞性編輯)
+        // 核心匯出 (包含單頁編輯套用)
         // ==========================================
-        function triggerDownload(blob, filename) {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
         async function exportProcessedPdf(pageIndicesToExport, filenamePrefix) {
             if (!currentPdfDoc) return;
-            
-            // 建立一個全新的 PDF 實例來承載修改，不污染原本的 currentPdfDoc
             const exportPdf = await PDFLib.PDFDocument.create();
             const copiedPages = await exportPdf.copyPages(currentPdfDoc, pageIndicesToExport);
 
-            // 準備：浮水印資源
+            // 準備全域資源
             let wmFont = null;
-            if (enableWmCb.checked && wmText.value.trim() !== '') {
-                // 使用內建標準字型 (目前優化支援英數)
+            if (document.getElementById('enableWmCb').checked && document.getElementById('wmText').value.trim()) {
                 wmFont = await exportPdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
             }
-
-            // 準備：簽名檔資源
             let embedSigImg = null;
-            if (enableSigCb.checked && isSigReady) {
-                const sigDataUrl = sigCanvas.toDataURL("image/png");
-                embedSigImg = await exportPdf.embedPng(sigDataUrl);
+            if (document.getElementById('enableSigCb').checked && isSigReady) {
+                embedSigImg = await exportPdf.embedPng(sigCanvas.toDataURL("image/png"));
             }
 
-            // 逐頁處理所有操作：旋轉 -> 浮水印 -> 簽名
-            copiedPages.forEach((page, idx) => {
+            // 處理每一頁
+            for (let idx = 0; idx < copiedPages.length; idx++) {
+                const page = copiedPages[idx];
                 const originalIdx = pageIndicesToExport[idx];
                 const { width, height } = page.getSize();
 
-                // 1. 套用旋轉
+                // 1. 套用立可白與單頁文字編輯
+                if (pageEdits[originalIdx]) {
+                    const edits = pageEdits[originalIdx];
+                    
+                    // 立可白矩形
+                    edits.whiteouts.forEach(rect => {
+                        page.drawRectangle({
+                            x: rect.x, y: rect.y, width: rect.w, height: rect.h,
+                            color: PDFLib.rgb(1, 1, 1),
+                        });
+                    });
+
+                    // 新增文字 (將文字利用 Canvas 轉為圖片 PNG，藉此完美支援繁體中文與系統字型！)
+                    for (const txt of edits.texts) {
+                        const tCanvas = document.createElement('canvas');
+                        const tCtx = tCanvas.getContext('2d');
+                        // 使用高解析度渲染文字避免模糊
+                        const scale = 4; 
+                        const fontSize = txt.size * scale;
+                        tCtx.font = `bold ${fontSize}px sans-serif`;
+                        
+                        const metrics = tCtx.measureText(txt.text);
+                        tCanvas.width = metrics.width + 20; // 留點邊距
+                        tCanvas.height = fontSize * 1.5;
+
+                        tCtx.font = `bold ${fontSize}px sans-serif`; // 調整大小後需重設
+                        tCtx.fillStyle = txt.color;
+                        tCtx.textBaseline = 'top';
+                        tCtx.fillText(txt.text, 5, 5);
+
+                        const textImage = await exportPdf.embedPng(tCanvas.toDataURL('image/png'));
+                        
+                        // 計算 PDF 的正確高度偏移 (因為 drawImage 的起點是左下角)
+                        const renderHeight = tCanvas.height / scale;
+                        page.drawImage(textImage, {
+                            x: txt.x, 
+                            y: txt.y - renderHeight, 
+                            width: tCanvas.width / scale,
+                            height: renderHeight
+                        });
+                    }
+                }
+
+                // 2. 套用旋轉 (在畫完自訂編輯後再旋轉，避免座標錯亂)
                 if (pageRotations[originalIdx]) {
                     const currentAngle = page.getRotation().angle;
                     page.setRotation(PDFLib.degrees(currentAngle + pageRotations[originalIdx]));
                 }
 
-                // 重新取得可能因旋轉改變的寬高 (供圖層定位使用)
+                // 重新取得可能因旋轉改變的寬高
                 const effectiveWidth = page.getRotation().angle % 180 === 0 ? width : height;
                 const effectiveHeight = page.getRotation().angle % 180 === 0 ? height : width;
 
-                // 2. 套用浮水印
+                // 3. 套用全域浮水印
                 if (wmFont) {
-                    const text = wmText.value;
-                    const size = parseInt(wmSize.value);
+                    const text = document.getElementById('wmText').value;
+                    const size = parseInt(document.getElementById('wmSize').value);
                     const textWidth = wmFont.widthOfTextAtSize(text, size);
                     const textHeight = wmFont.heightAtSize(size);
-                    
                     page.drawText(text, {
                         x: effectiveWidth / 2 - textWidth / 2 + (textHeight/2), 
                         y: effectiveHeight / 2 - textHeight / 2,
-                        size: size,
-                        font: wmFont,
-                        color: PDFLib.rgb(0.6, 0.6, 0.6), // 灰色
-                        opacity: parseFloat(wmOpacity.value),
+                        size: size, font: wmFont, color: PDFLib.rgb(0.6, 0.6, 0.6), 
+                        opacity: parseFloat(document.getElementById('wmOpacity').value),
                         rotate: PDFLib.degrees(45),
                     });
                 }
 
-                // 3. 套用簽名檔
+                // 4. 套用簽名檔
                 if (embedSigImg) {
-                    const targetPages = sigPages.value;
-                    const isFirstPage = idx === 0;
-                    const isLastPage = idx === copiedPages.length - 1;
-
-                    if (targetPages === 'all' || (targetPages === 'first' && isFirstPage) || (targetPages === 'last' && isLastPage)) {
-                        // 縮放簽名檔 (預設寬度控制在頁面寬度的 1/4)
-                        const scaleFactor = (effectiveWidth / 4) / embedSigImg.width;
-                        const sigDims = embedSigImg.scale(scaleFactor);
-                        
-                        const pos = sigPosition.value;
+                    const targetPages = document.getElementById('sigPages').value;
+                    if (targetPages === 'all' || (targetPages === 'first' && idx === 0) || (targetPages === 'last' && idx === copiedPages.length - 1)) {
+                        const sigDims = embedSigImg.scale((effectiveWidth / 4) / embedSigImg.width);
+                        const pos = document.getElementById('sigPosition').value;
                         const margin = 40;
                         let x = 0, y = 0;
-
                         if (pos === 'br') { x = effectiveWidth - sigDims.width - margin; y = margin; }
                         if (pos === 'bl') { x = margin; y = margin; }
                         if (pos === 'tr') { x = effectiveWidth - sigDims.width - margin; y = effectiveHeight - sigDims.height - margin; }
                         if (pos === 'tl') { x = margin; y = effectiveHeight - sigDims.height - margin; }
 
-                        page.drawImage({
-                            image: embedSigImg,
-                            x: x,
-                            y: y,
-                            width: sigDims.width,
-                            height: sigDims.height,
-                        });
+                        page.drawImage({ image: embedSigImg, x: x, y: y, width: sigDims.width, height: sigDims.height });
                     }
                 }
 
                 exportPdf.addPage(page);
-            });
+            }
 
-            // 儲存並下載
             const pdfBytes = await exportPdf.save();
             const blob = new Blob([pdfBytes], { type: "application/pdf" });
-            triggerDownload(blob, filenamePrefix + fileNameDisplay.textContent);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filenamePrefix + document.getElementById('fileNameDisplay').textContent;
+            document.body.appendChild(a);
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
-        // 按鈕綁定
-        downloadAllBtn.addEventListener('click', async () => {
-            const btnTextOriginal = downloadAllBtn.innerHTML;
-            downloadAllBtn.innerHTML = "處理中...";
-            downloadAllBtn.disabled = true;
+        downloadAllBtn.onclick = async () => {
+            downloadAllBtn.textContent = "處理中...";
             try {
-                const allPageIndices = Array.from({ length: currentPdfDoc.getPageCount() }, (_, i) => i);
-                await exportProcessedPdf(allPageIndices, "Processed_");
-            } catch (err) {
-                console.error(err);
-                alert("匯出失敗，請重試。");
-            } finally {
-                downloadAllBtn.innerHTML = btnTextOriginal;
-                downloadAllBtn.disabled = false;
-            }
-        });
+                const indices = Array.from({ length: currentPdfDoc.getPageCount() }, (_, i) => i);
+                await exportProcessedPdf(indices, "Processed_");
+            } finally { downloadAllBtn.textContent = "套用並匯出檔案"; }
+        };
 
-        downloadSelectedBtn.addEventListener('click', async () => {
-            const btnTextOriginal = downloadSelectedBtn.textContent;
+        downloadSelectedBtn.onclick = async () => {
             downloadSelectedBtn.textContent = "處理中...";
-            downloadSelectedBtn.disabled = true;
             try {
-                const sortedSelectedIndices = Array.from(selectedPages).sort((a, b) => a - b);
-                await exportProcessedPdf(sortedSelectedIndices, "Extracted_");
-            } catch (err) {
-                console.error(err);
-                alert("匯出失敗，請重試。");
-            } finally {
-                downloadSelectedBtn.textContent = btnTextOriginal;
-                downloadSelectedBtn.disabled = false;
-            }
-        });
+                await exportProcessedPdf(Array.from(selectedPages).sort((a,b)=>a-b), "Extracted_");
+            } finally { downloadSelectedBtn.textContent = `匯出選取的 ${selectedPages.size} 頁`; }
+        };
 
-        // ==========================================
-        // 重置應用程式狀態
-        // ==========================================
-        resetBtn.addEventListener('click', () => {
-            pdfInput.value = ''; 
-            fileNameDisplay.textContent = '';
-            pageCountDisplay.textContent = '';
-            currentPdfDoc = null;
-            pageRotations = {};
-            selectedPages.clear();
-            thumbnailsContainer.innerHTML = '';
-            updateDownloadButtons();
-            
-            // 重置階段 3 UI
-            enableWmCb.checked = false;
-            wmControls.classList.add('opacity-50', 'pointer-events-none');
-            enableSigCb.checked = false;
-            sigControls.classList.add('opacity-50', 'pointer-events-none');
-            originalSigImage = null;
-            isSigReady = false;
-            sigPlaceholderText.classList.remove('hidden');
-            sigCanvas.classList.add('hidden');
-            sigInput.value = '';
-            
-            uploadSection.classList.remove('hidden');
-            workspaceSection.classList.add('hidden');
-            workspaceSection.classList.remove('flex');
-        });
+        document.getElementById('resetBtn').onclick = () => { location.reload(); }; // 最乾淨的重置方式
     </script>
 </body>
 </html>
