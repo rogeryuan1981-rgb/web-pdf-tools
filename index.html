@@ -16,7 +16,6 @@
     
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <!-- 新增：引入 Sortable.js 用於拖曳排序 -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
     <style>
@@ -53,7 +52,6 @@
                 linear-gradient(-45deg, transparent 75%, #374151 75%);
         }
         
-        /* 拖曳時的樣式 */
         .sortable-ghost {
             opacity: 0.4;
         }
@@ -160,6 +158,59 @@
                     </div>
                     <div id="sigControls" class="flex flex-col gap-3 opacity-50 pointer-events-none transition-opacity">
                         <div class="flex gap-2">
+                            <input type="file" id="sigInput" accept="image/png, image/jpeg" class="hidden">
+                            <button id="sigUploadBtn" class="flex-grow text-sm px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium">上傳圖片</button>
+                            <select id="sigPages" class="text-sm px-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900"><option value="all">所有頁</option><option value="last" selected>僅末頁</option><option value="first">僅首頁</option></select>
+                            <select id="sigPosition" class="text-sm px-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900"><option value="br" selected>右下</option><option value="bl">左下</option><option value="tr">右上</option><option value="tl">左上</option></select>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                            <div class="flex justify-between text-xs mb-2 text-gray-500"><span>去背強度</span><span id="sigToleranceVal" class="text-blue-500 font-bold">200</span></div>
+                            <input type="range" id="sigTolerance" min="0" max="255" value="200" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mb-3">
+                            <div class="w-full h-20 rounded border border-dashed border-gray-300 bg-checkerboard flex items-center justify-center overflow-hidden">
+                                <span id="sigPlaceholderText" class="text-sm text-gray-400">預覽區</span>
+                                <canvas id="sigCanvas" class="hidden max-w-full max-h-full object-contain"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作說明 -->
+            <div class="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-3 rounded-lg text-sm flex items-start gap-2">
+                <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <p><strong>操作提示：</strong>您可以<strong>拖曳卡片來更改頁面順序</strong>。滑鼠移至卡片上，點選 <svg class="inline w-4 h-4 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> 可進入單頁編輯模式；點選 ↺ 可旋轉。直接點擊卡片可勾選進行分割匯出。</p>
+            </div>
+
+            <!-- 縮圖預覽區 -->
+            <div id="thumbnailsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
+            
+        </section>
+    </main>
+
+    <!-- 編輯彈出視窗 (Modal) -->
+    <div id="editModal" class="fixed inset-0 z-50 hidden bg-gray-900/90 flex-col backdrop-blur-sm">
+        <!-- Toolbar -->
+        <div class="bg-white dark:bg-gray-800 shadow-md p-4 flex flex-wrap justify-between items-center z-10 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center gap-4">
+                <span class="font-bold text-lg mr-4">單頁進階編輯</span>
+                
+                <!-- 工具選擇 -->
+                <div class="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-lg">
+                    <button id="toolWhiteout" class="px-3 py-1.5 text-sm font-medium rounded-md bg-white dark:bg-gray-700 shadow shadow-sm text-blue-600 dark:text-blue-400 transition-colors">立可白 (框選)</button>
+                    <button id="toolText" class="px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">加文字 (點擊)</button>
+                </div>
+                
+                <!-- 文字設定 -->
+                <div id="textSettings" class="hidden items-center gap-3 border-l border-gray-300 dark:border-gray-600 pl-4">
+                    <input type="color" id="editTextColor" value="#ff0000" class="w-8 h-8 rounded cursor-pointer border-0 p-0">
+                    <div class="flex items-center gap-1">
+                        <span class="text-sm text-gray-500">大小</span>
+                        <input type="number" id="editFontSize" value="16" min="8" max="72" class="w-16 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-sm focus:outline-none">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-2">
                 <button id="undoEditBtn" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>上一步</button>
                 <button id="clearEditsBtn" class="px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors font-medium">清除本頁所有修改</button>
                 <button id="closeEditModalBtn" class="px-6 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-bold shadow-sm">完成並返回</button>
@@ -168,9 +219,7 @@
         
         <!-- Canvas Container -->
         <div class="flex-grow overflow-auto flex justify-center items-center p-8 relative" id="editCanvasContainer">
-            <!-- baseCanvas 用於渲染原本的 PDF 頁面 -->
             <canvas id="baseCanvas" class="shadow-2xl absolute"></canvas>
-            <!-- overlayCanvas 用於繪製使用者的操作軌跡 (透明背景) -->
             <canvas id="overlayCanvas" class="absolute cursor-crosshair"></canvas>
         </div>
     </div>
@@ -187,20 +236,13 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-        // ==========================================
-        // 核心狀態
-        // ==========================================
         let currentPdfDoc = null; 
-        let currentPdfBytes = null; // 給 pdf.js 用的原始 byte array
+        let currentPdfBytes = null; 
         let pageRotations = {};   
         let selectedPages = new Set(); 
         
-        // 頁面編輯狀態 { pageIndex: [{ type: 'whiteout', data: {...} }, { type: 'text', data: {...} }] }
         let pageEdits = {}; 
         
-        // ==========================================
-        // DOM 元素綁定
-        // ==========================================
         const html = document.documentElement;
         const uploadSection = document.getElementById('uploadSection');
         const workspaceSection = document.getElementById('workspaceSection');
@@ -209,9 +251,6 @@
         const downloadAllBtn = document.getElementById('downloadAllBtn');
         const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
         
-        // ==========================================
-        // 編輯器 (Modal) 邏輯
-        // ==========================================
         const editModal = document.getElementById('editModal');
         const baseCanvas = document.getElementById('baseCanvas');
         const overlayCanvas = document.getElementById('overlayCanvas');
@@ -221,12 +260,11 @@
         const textSettings = document.getElementById('textSettings');
         
         let activeEditPageIdx = null;
-        let currentTool = 'whiteout'; // 'whiteout' | 'text'
+        let currentTool = 'whiteout';
         let isDrawing = false;
         let startX = 0, startY = 0;
-        let viewportScale = 1.5; // 編輯時放大的倍率
+        let viewportScale = 1.5; 
 
-        // 切換工具按鈕樣式
         function setTool(tool) {
             currentTool = tool;
             if (tool === 'whiteout') {
@@ -247,7 +285,6 @@
         toolWhiteoutBtn.onclick = () => setTool('whiteout');
         toolTextBtn.onclick = () => setTool('text');
 
-        // 開啟編輯器
         async function openEditModal(pageIndex) {
             if (pageRotations[pageIndex]) {
                 alert("⚠️ 為了確保座標正確，請先將頁面旋轉角度重置為 0 度，才能進入編輯模式。");
@@ -257,7 +294,6 @@
             activeEditPageIdx = pageIndex;
             if (!pageEdits[pageIndex]) pageEdits[pageIndex] = [];
 
-            // 使用 pdf.js 渲染高解析度底圖
             const pdf = await pdfjsLib.getDocument({data: currentPdfBytes.slice(0)}).promise;
             const page = await pdf.getPage(pageIndex + 1);
             
@@ -280,7 +316,6 @@
             editModal.classList.add('hidden');
             editModal.classList.remove('flex');
             
-            // 僅更新特定卡片的「已編輯」標籤，避免重繪打亂拖曳排序
             if (activeEditPageIdx !== null) {
                 const checkbox = thumbnailsContainer.querySelector(`.page-checkbox[value="${activeEditPageIdx}"]`);
                 if (checkbox) {
@@ -306,15 +341,13 @@
             }
         };
 
-        // 新增上一步功能
         document.getElementById('undoEditBtn').onclick = () => {
             if (pageEdits[activeEditPageIdx] && pageEdits[activeEditPageIdx].length > 0) {
-                pageEdits[activeEditPageIdx].pop(); // 移除時間軸上最後一個動作
-                redrawOverlay(); // 重新繪製畫面
+                pageEdits[activeEditPageIdx].pop(); 
+                redrawOverlay(); 
             }
         };
 
-        // Canvas 滑鼠事件處理 (繪圖核心)
         overlayCanvas.addEventListener('mousedown', (e) => {
             if (currentTool !== 'whiteout') return;
             isDrawing = true;
@@ -422,20 +455,14 @@
             });
         }
 
-        // ==========================================
-        // 更新卡片頁碼標籤 (供拖曳後呼叫)
-        // ==========================================
         function updatePageLabels() {
             const labels = thumbnailsContainer.querySelectorAll('.page-label-text');
             labels.forEach((label, index) => {
-                const badge = label.querySelector('span.bg-yellow-400'); // 保留已編輯標籤
+                const badge = label.querySelector('span.bg-yellow-400'); 
                 label.innerHTML = (badge ? badge.outerHTML + ' ' : '') + `第 ${index + 1} 頁`;
             });
         }
 
-        // ==========================================
-        // 核心載入與 UI
-        // ==========================================
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             html.classList.add('dark');
         }
@@ -504,7 +531,7 @@
                 const viewport = page.getViewport({scale: 0.4}); 
                 
                 const card = document.createElement('label');
-                card.className = "relative cursor-move group flex flex-col"; // 加上 cursor-move 提示可拖曳
+                card.className = "relative cursor-move group flex flex-col"; 
                 
                 const checkbox = document.createElement('input');
                 checkbox.type = "checkbox";
@@ -559,7 +586,6 @@
                 }
 
                 const pageLabel = document.createElement('div');
-                // 加上 page-label-text class 以供拖曳後重新編號抓取
                 pageLabel.className = "page-label-text text-center py-1.5 text-xs font-medium text-gray-600 bg-white border-t border-gray-100 relative";
                 pageLabel.innerHTML = `${editBadge}第 ${pageNum} 頁`;
 
@@ -574,12 +600,10 @@
                 thumbnailsContainer.appendChild(card);
             }
 
-            // 初始化拖曳排序 (SortableJS)
             new Sortable(thumbnailsContainer, {
                 animation: 150,
                 ghostClass: 'sortable-ghost',
                 onEnd: function () {
-                    // 拖曳結束後，更新每張卡片底下的第 X 頁文字
                     updatePageLabels();
                 }
             });
@@ -595,9 +619,6 @@
             }
         }
 
-        // ==========================================
-        // 浮水印與簽名狀態處理
-        // ==========================================
         let isSigReady = false;
         let originalSigImage = null;
         const sigCanvas = document.getElementById('sigCanvas');
@@ -648,17 +669,12 @@
             sigCtx.putImageData(imgData, 0, 0);
         }
 
-        // ==========================================
-        // 核心匯出 (改為依據當前 DOM 視覺排序)
-        // ==========================================
         async function exportProcessedPdf(pageIndicesToExport, filenamePrefix) {
             if (!currentPdfDoc || pageIndicesToExport.length === 0) return;
             const exportPdf = await PDFLib.PDFDocument.create();
             
-            // 依據傳入的順序複製頁面
             const copiedPages = await exportPdf.copyPages(currentPdfDoc, pageIndicesToExport);
 
-            // 準備全域資源
             let wmFont = null;
             if (document.getElementById('enableWmCb').checked && document.getElementById('wmText').value.trim()) {
                 wmFont = await exportPdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
@@ -668,13 +684,11 @@
                 embedSigImg = await exportPdf.embedPng(sigCanvas.toDataURL("image/png"));
             }
 
-            // 處理每一頁
             for (let idx = 0; idx < copiedPages.length; idx++) {
                 const page = copiedPages[idx];
                 const originalIdx = pageIndicesToExport[idx];
                 const { width, height } = page.getSize();
 
-                // 1. 套用立可白與單頁文字編輯 (使用原始 index 來找對應的編輯紀錄)
                 if (pageEdits[originalIdx] && pageEdits[originalIdx].length > 0) {
                     const edits = pageEdits[originalIdx];
                     
@@ -715,7 +729,6 @@
                     }
                 }
 
-                // 2. 套用旋轉
                 if (pageRotations[originalIdx]) {
                     const currentAngle = page.getRotation().angle;
                     page.setRotation(PDFLib.degrees(currentAngle + pageRotations[originalIdx]));
@@ -724,7 +737,6 @@
                 const effectiveWidth = page.getRotation().angle % 180 === 0 ? width : height;
                 const effectiveHeight = page.getRotation().angle % 180 === 0 ? height : width;
 
-                // 3. 套用全域浮水印
                 if (wmFont) {
                     const text = document.getElementById('wmText').value;
                     const size = parseInt(document.getElementById('wmSize').value);
@@ -739,7 +751,6 @@
                     });
                 }
 
-                // 4. 套用簽名檔
                 if (embedSigImg) {
                     const targetPages = document.getElementById('sigPages').value;
                     if (targetPages === 'all' || (targetPages === 'first' && idx === 0) || (targetPages === 'last' && idx === copiedPages.length - 1)) {
@@ -773,7 +784,6 @@
         downloadAllBtn.onclick = async () => {
             downloadAllBtn.textContent = "處理中...";
             try {
-                // 從 DOM 取得目前拖曳後的實際順序
                 const checkboxes = thumbnailsContainer.querySelectorAll('.page-checkbox');
                 const currentOrderIndices = Array.from(checkboxes).map(cb => parseInt(cb.value));
                 await exportProcessedPdf(currentOrderIndices, "Processed_");
@@ -783,7 +793,6 @@
         downloadSelectedBtn.onclick = async () => {
             downloadSelectedBtn.textContent = "處理中...";
             try {
-                // 從 DOM 取得勾選且按照當前拖曳順序的項目
                 const checkedBoxes = thumbnailsContainer.querySelectorAll('.page-checkbox:checked');
                 const selectedOrderIndices = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
                 await exportProcessedPdf(selectedOrderIndices, "Extracted_");
