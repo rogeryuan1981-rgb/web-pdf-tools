@@ -38,6 +38,26 @@
             border-color: #60a5fa;
             background-color: rgba(30, 58, 138, 0.4);
         }
+
+        /* 透明棋盤格背景 (用於預覽去背效果) */
+        .bg-checkerboard {
+            background-color: #f8f9fa;
+            background-image: 
+                linear-gradient(45deg, #e5e7eb 25%, transparent 25%), 
+                linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #e5e7eb 75%), 
+                linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+        }
+        .dark .bg-checkerboard {
+            background-color: #1f2937;
+            background-image: 
+                linear-gradient(45deg, #374151 25%, transparent 25%), 
+                linear-gradient(-45deg, #374151 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #374151 75%), 
+                linear-gradient(-45deg, transparent 75%, #374151 75%);
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col transition-colors duration-200 font-sans">
@@ -78,11 +98,11 @@
         <!-- 工具列與工作區 -->
         <section id="workspaceSection" class="hidden flex-col gap-6">
             <!-- 檔案資訊與全域操作列 -->
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl flex flex-wrap gap-4 justify-between items-center shadow-sm">
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl flex flex-wrap gap-4 justify-between items-center shadow-sm sticky top-20 z-20">
                 <div class="flex items-center gap-3">
                     <svg class="w-8 h-8 text-red-500" viewBox="0 0 24 24" fill="currentColor"><path d="M8.267 14.68c-.184 0-.308.018-.372.036v1.178c.076.018.171.023.302.023.479 0 .774-.242.774-.651 0-.366-.254-.586-.704-.586zm3.487.012c-.2 0-.33.018-.407.036v2.61c.077.018.201.018.313.018.817.0 1.349-.44 1.349-1.396.002-.772-.423-1.268-1.255-1.268z"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM9.498 16.19c-.309.29-.765.42-1.296.42a2.23 2.23 0 0 1-.308-.018v1.426H6.75v-3.936A7.558 7.558 0 0 1 8.21 14c.557 0 .935.128 1.165.34.205.193.307.458.307.773 0 .386-.061.806-.184 1.077zm4.32 1.436c-.361.344-.924.468-1.554.468a3.13 3.13 0 0 1-.365-.018v-3.947a5.525 5.525 0 0 1 .425-.018c.676 0 1.222.138 1.552.477.348.353.535.83.535 1.506 0 .666-.192 1.171-.593 1.532zm2.934-.515h-1.611v1.408h-1.142v-3.92h2.894v.86h-1.752v.677h1.611v.975z"/></svg>
                     <div>
-                        <span class="font-medium text-lg block" id="fileNameDisplay">已載入檔案</span>
+                        <span class="font-medium text-lg block truncate max-w-[200px] sm:max-w-xs" id="fileNameDisplay">已載入檔案</span>
                         <span class="text-xs text-gray-500 dark:text-gray-400" id="pageCountDisplay">共 0 頁</span>
                     </div>
                 </div>
@@ -90,29 +110,115 @@
                     <button id="downloadSelectedBtn" class="text-sm px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors hidden shadow-sm">
                         匯出選取頁面 (分割)
                     </button>
-                    <button id="downloadAllBtn" class="text-sm px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm">
-                        匯出完整檔案
+                    <button id="downloadAllBtn" class="text-sm px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm relative overflow-hidden group">
+                        <span class="relative z-10 flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            套用並匯出檔案
+                        </span>
                     </button>
                     <button id="resetBtn" class="text-sm px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg font-medium transition-colors">
-                        重新選擇檔案
+                        重新選擇
                     </button>
                 </div>
             </div>
             
+            <!-- 階段 3：圖層與浮水印模組 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- 浮水印區塊 -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path></svg>
+                            全域文字浮水印
+                        </h3>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="enableWmCb" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+                    
+                    <div id="wmControls" class="flex flex-col gap-3 opacity-50 pointer-events-none transition-opacity">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">浮水印文字 (建議英數)</label>
+                            <input type="text" id="wmText" placeholder="例如：CONFIDENTIAL" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">字體大小</label>
+                                <input type="number" id="wmSize" value="60" min="10" max="150" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">透明度 (0.1 ~ 1.0)</label>
+                                <input type="number" id="wmOpacity" value="0.3" min="0.1" max="1.0" step="0.1" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400">啟用後，文字將以 45 度傾斜自動置中於匯出檔案的所有頁面。</p>
+                    </div>
+                </div>
+
+                <!-- 簽名檔區塊 -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            簽名檔去背與疊加
+                        </h3>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="enableSigCb" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+
+                    <div id="sigControls" class="flex flex-col gap-3 opacity-50 pointer-events-none transition-opacity">
+                        <div class="flex gap-2">
+                            <input type="file" id="sigInput" accept="image/png, image/jpeg" class="hidden">
+                            <button id="sigUploadBtn" class="flex-grow text-sm px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium">
+                                上傳簽名圖片
+                            </button>
+                            <select id="sigPages" class="text-sm px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 focus:outline-none">
+                                <option value="all">所有頁</option>
+                                <option value="last" selected>僅末頁</option>
+                                <option value="first">僅首頁</option>
+                            </select>
+                            <select id="sigPosition" class="text-sm px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 focus:outline-none">
+                                <option value="br" selected>右下角</option>
+                                <option value="bl">左下角</option>
+                                <option value="tr">右上角</option>
+                                <option value="tl">左上角</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 去背滑桿與預覽 -->
+                        <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs font-medium text-gray-500 dark:text-gray-400">去背強度 (拖曳移除白底)</label>
+                                <span id="sigToleranceVal" class="text-xs text-blue-500 font-bold">200</span>
+                            </div>
+                            <input type="range" id="sigTolerance" min="0" max="255" value="200" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 mb-3">
+                            
+                            <div class="w-full h-24 rounded border border-dashed border-gray-300 dark:border-gray-600 bg-checkerboard flex items-center justify-center overflow-hidden">
+                                <span id="sigPlaceholderText" class="text-sm text-gray-400">尚未上傳圖片</span>
+                                <canvas id="sigCanvas" class="hidden max-w-full max-h-full object-contain"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- 操作說明 -->
             <div class="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-3 rounded-lg text-sm flex items-start gap-2">
                 <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <p><strong>基礎編輯模式：</strong>您可以使用卡片右上角的按鈕旋轉單一頁面。若要<strong>分割</strong>檔案，請勾選您需要的頁面卡片，然後點擊上方的「匯出選取頁面」。</p>
+                <p><strong>基礎編輯模式：</strong>卡片右上角可旋轉單頁。若要<strong>分割</strong>，請點擊勾選所需卡片；若啟用上方的「浮水印/簽名」，將會在您點擊匯出時一併套用至 PDF 中。</p>
             </div>
 
-            <!-- 縮圖預覽區 (動態生成) -->
+            <!-- 縮圖預覽區 -->
             <div id="thumbnailsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                 <!-- 縮圖卡片將由 JS 產生 -->
             </div>
             
-            <!-- 預留：階段 3 & 4 工具列 -->
+            <!-- 預留：階段 4 工具列 -->
             <div class="mt-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-center text-gray-400 text-sm">
-                未來擴充區塊：階段 3 (浮水印/簽名) 與 階段 4 (加密) 將顯示於此
+                未來擴充區塊：階段 4 (密碼保護加密) 將顯示於此
             </div>
         </section>
     </main>
@@ -134,9 +240,13 @@
         // ==========================================
         // 狀態管理
         // ==========================================
-        let currentPdfDoc = null; // 儲存 pdf-lib 的 PDFDocument 物件
+        let currentPdfDoc = null; // 儲存最原始合併完的 PDF 狀態
         let pageRotations = {};   // 記錄各頁面旋轉角度 { pageIndex: degree }
-        let selectedPages = new Set(); // 記錄使用者勾選要分割的頁面索引
+        let selectedPages = new Set(); 
+        
+        // 簽名檔狀態
+        let originalSigImage = null; // 儲存使用者上傳的原始圖片物件
+        let isSigReady = false;
 
         // ==========================================
         // UI 元素
@@ -155,6 +265,26 @@
         const downloadAllBtn = document.getElementById('downloadAllBtn');
         const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
         const thumbnailsContainer = document.getElementById('thumbnailsContainer');
+
+        // 浮水印 UI
+        const enableWmCb = document.getElementById('enableWmCb');
+        const wmControls = document.getElementById('wmControls');
+        const wmText = document.getElementById('wmText');
+        const wmSize = document.getElementById('wmSize');
+        const wmOpacity = document.getElementById('wmOpacity');
+
+        // 簽名檔 UI
+        const enableSigCb = document.getElementById('enableSigCb');
+        const sigControls = document.getElementById('sigControls');
+        const sigUploadBtn = document.getElementById('sigUploadBtn');
+        const sigInput = document.getElementById('sigInput');
+        const sigPages = document.getElementById('sigPages');
+        const sigPosition = document.getElementById('sigPosition');
+        const sigTolerance = document.getElementById('sigTolerance');
+        const sigToleranceVal = document.getElementById('sigToleranceVal');
+        const sigCanvas = document.getElementById('sigCanvas');
+        const sigPlaceholderText = document.getElementById('sigPlaceholderText');
+        const sigCtx = sigCanvas.getContext('2d');
 
         // ==========================================
         // 主題切換邏輯
@@ -180,7 +310,77 @@
         });
 
         // ==========================================
-        // 檔案上傳與拖曳邏輯
+        // 階段 3：面板開關視覺邏輯
+        // ==========================================
+        enableWmCb.addEventListener('change', (e) => {
+            if(e.target.checked) wmControls.classList.remove('opacity-50', 'pointer-events-none');
+            else wmControls.classList.add('opacity-50', 'pointer-events-none');
+        });
+
+        enableSigCb.addEventListener('change', (e) => {
+            if(e.target.checked) sigControls.classList.remove('opacity-50', 'pointer-events-none');
+            else sigControls.classList.add('opacity-50', 'pointer-events-none');
+        });
+
+        // ==========================================
+        // 階段 3：簽名檔上傳與去背邏輯 (Canvas)
+        // ==========================================
+        sigUploadBtn.addEventListener('click', () => sigInput.click());
+
+        sigInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalSigImage = img;
+                    sigPlaceholderText.classList.add('hidden');
+                    sigCanvas.classList.remove('hidden');
+                    processSignatureBackground(); // 處理去背
+                    isSigReady = true;
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        sigTolerance.addEventListener('input', (e) => {
+            sigToleranceVal.textContent = e.target.value;
+            if (originalSigImage) processSignatureBackground();
+        });
+
+        function processSignatureBackground() {
+            if (!originalSigImage) return;
+            
+            const threshold = parseInt(sigTolerance.value);
+            sigCanvas.width = originalSigImage.width;
+            sigCanvas.height = originalSigImage.height;
+            
+            // 將原始圖片畫入 Canvas
+            sigCtx.drawImage(originalSigImage, 0, 0);
+            
+            // 取得像素資料
+            const imgData = sigCtx.getImageData(0, 0, sigCanvas.width, sigCanvas.height);
+            const data = imgData.data;
+
+            // 亮度門檻去背演算法：若 RGB 都大於 threshold，則認定為背景，將 Alpha 設為 0
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i+1];
+                const b = data[i+2];
+                if (r >= threshold && g >= threshold && b >= threshold) {
+                    data[i+3] = 0; // 變透明
+                }
+            }
+            
+            // 將去背後的資料放回 Canvas 預覽
+            sigCtx.putImageData(imgData, 0, 0);
+        }
+
+        // ==========================================
+        // 檔案上傳與拖曳邏輯 (階段 1 & 2)
         // ==========================================
         uploadSection.addEventListener('click', () => pdfInput.click());
 
@@ -212,22 +412,15 @@
             if (pdfInput.files.length > 0) handleFilesSelected();
         });
 
-        // ==========================================
-        // 核心邏輯：讀取、合併與渲染 PDF
-        // ==========================================
         async function handleFilesSelected() {
             if (pdfInput.files.length === 0) return;
-            
-            // 顯示 Loading
             loadingOverlay.classList.remove('hidden');
             loadingOverlay.classList.add('flex');
 
             try {
-                // 1. 初始化一個全新的 PDFDocument (用於合併)
                 const mergedPdf = await PDFLib.PDFDocument.create();
                 let outputFileName = "";
 
-                // 2. 逐一讀取並合併檔案
                 for (let i = 0; i < pdfInput.files.length; i++) {
                     const file = pdfInput.files[i];
                     if (i === 0) outputFileName = pdfInput.files.length > 1 ? "Merged_" + file.name : file.name;
@@ -238,54 +431,43 @@
                     copiedPages.forEach((page) => mergedPdf.addPage(page));
                 }
 
-                currentPdfDoc = mergedPdf; // 儲存至全域變數供後續旋轉/匯出使用
+                currentPdfDoc = mergedPdf; 
                 pageRotations = {};
                 selectedPages.clear();
                 updateDownloadButtons();
 
-                // 3. 更新 UI 文字
                 fileNameDisplay.textContent = outputFileName;
                 pageCountDisplay.textContent = `共 ${currentPdfDoc.getPageCount()} 頁`;
                 
-                // 4. 將合併後的 PDF 轉為 Byte Array 餵給 pdf.js 渲染縮圖
                 const pdfBytes = await mergedPdf.save();
                 await renderThumbnails(pdfBytes);
 
-                // 5. 切換畫面
                 uploadSection.classList.add('hidden');
                 workspaceSection.classList.remove('hidden');
                 workspaceSection.classList.add('flex');
 
             } catch (error) {
                 console.error("PDF 處理失敗:", error);
-                alert("處理 PDF 時發生錯誤，請確認檔案是否已損毀或有加密密碼保護。");
+                alert("處理 PDF 時發生錯誤，請確認檔案是否已損毀或有加密保護。");
             } finally {
-                // 隱藏 Loading
                 loadingOverlay.classList.add('hidden');
                 loadingOverlay.classList.remove('flex');
             }
         }
 
-        // 渲染每一頁的縮圖
         async function renderThumbnails(pdfBytes) {
-            thumbnailsContainer.innerHTML = ''; // 清空容器
-            
-            // 載入 PDF (pdf.js)
+            thumbnailsContainer.innerHTML = ''; 
             const loadingTask = pdfjsLib.getDocument({data: pdfBytes});
             const pdf = await loadingTask.promise;
             
             for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                 const pageIndex = pageNum - 1;
                 const page = await pdf.getPage(pageNum);
+                const viewport = page.getViewport({scale: 0.4}); 
                 
-                // 計算縮放比例以產生縮圖 (不需全解析度)
-                const viewport = page.getViewport({scale: 0.5});
-                
-                // 建立卡片容器
                 const card = document.createElement('label');
                 card.className = "relative cursor-pointer group flex flex-col";
                 
-                // 隱藏的 Checkbox (用於選取分割)
                 const checkbox = document.createElement('input');
                 checkbox.type = "checkbox";
                 checkbox.className = "hidden page-checkbox";
@@ -296,42 +478,33 @@
                     updateDownloadButtons();
                 });
 
-                // 卡片視覺主體
                 const cardInner = document.createElement('div');
                 cardInner.className = "border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg overflow-hidden transition-all relative shadow-sm hover:shadow-md";
                 
-                // Canvas 容器 (處理旋轉用)
                 const canvasWrapper = document.createElement('div');
-                canvasWrapper.className = "flex items-center justify-center p-2 bg-gray-100 dark:bg-gray-900 h-48 overflow-hidden";
+                canvasWrapper.className = "flex items-center justify-center p-2 bg-gray-100 dark:bg-gray-900 h-40 overflow-hidden";
                 
                 const canvas = document.createElement('canvas');
                 canvas.className = "max-w-full max-h-full transition-transform duration-300";
-                canvas.id = `canvas-page-${pageIndex}`;
                 
-                // 旋轉按鈕
                 const rotateBtn = document.createElement('button');
                 rotateBtn.className = "absolute top-2 right-2 p-1.5 bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 rounded-md shadow backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100 dark:hover:bg-gray-700 z-10 border border-gray-200 dark:border-gray-600";
                 rotateBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>';
                 rotateBtn.title = "順時針旋轉 90 度";
                 rotateBtn.onclick = (e) => {
-                    e.preventDefault(); // 防止觸發 checkbox
+                    e.preventDefault(); 
                     rotatePage(pageIndex, canvas);
                 };
 
-                // 頁碼標籤
                 const pageLabel = document.createElement('div');
-                pageLabel.className = "text-center py-2 text-sm font-medium text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700";
+                pageLabel.className = "text-center py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700";
                 pageLabel.textContent = `第 ${pageNum} 頁`;
 
-                // 組合元素
                 const context = canvas.getContext('2d');
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
                 
-                await page.render({
-                    canvasContext: context,
-                    viewport: viewport
-                }).promise;
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
 
                 canvasWrapper.appendChild(canvas);
                 cardInner.appendChild(canvasWrapper);
@@ -339,28 +512,21 @@
                 cardInner.appendChild(pageLabel);
                 card.appendChild(checkbox);
                 card.appendChild(cardInner);
-                
                 thumbnailsContainer.appendChild(card);
             }
         }
 
-        // 旋轉單頁邏輯 (僅視覺更新，實際旋轉在匯出時處理)
         function rotatePage(pageIndex, canvasElement) {
             let currentRotation = pageRotations[pageIndex] || 0;
             currentRotation = (currentRotation + 90) % 360;
             pageRotations[pageIndex] = currentRotation;
-            
-            // 套用 CSS 旋轉
             canvasElement.style.transform = `rotate(${currentRotation}deg)`;
-            
-            // 由於旋轉 90/270 度時寬高會互換，做簡單的縮放調整避免超出框框
             if (currentRotation === 90 || currentRotation === 270) {
                 const scale = Math.min(canvasElement.parentElement.offsetWidth / canvasElement.height, canvasElement.parentElement.offsetHeight / canvasElement.width) * 0.9;
                 canvasElement.style.transform += ` scale(${scale})`;
             }
         }
 
-        // 更新按鈕顯示狀態
         function updateDownloadButtons() {
             if (selectedPages.size > 0) {
                 downloadSelectedBtn.classList.remove('hidden');
@@ -371,22 +537,8 @@
         }
 
         // ==========================================
-        // 匯出功能
+        // 核心匯出與圖層疊加處理引擎 (非破壞性編輯)
         // ==========================================
-        
-        // 將記錄的旋轉角度套用到 pdf-lib 物件
-        function applyRotationsToDocument(pdfDoc, pageIndices) {
-            pageIndices.forEach(idx => {
-                if (pageRotations[idx]) {
-                    const page = pdfDoc.getPage(idx);
-                    // 獲取當前角度並加上新的旋轉角度
-                    const currentAngle = page.getRotation().angle;
-                    page.setRotation(PDFLib.degrees(currentAngle + pageRotations[idx]));
-                }
-            });
-        }
-
-        // 觸發下載
         function triggerDownload(blob, filename) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -398,74 +550,128 @@
             URL.revokeObjectURL(url);
         }
 
-        // 匯出全部 (包含合併與旋轉)
-        downloadAllBtn.addEventListener('click', async () => {
+        async function exportProcessedPdf(pageIndicesToExport, filenamePrefix) {
             if (!currentPdfDoc) return;
             
-            const originalFileName = fileNameDisplay.textContent;
-            downloadAllBtn.textContent = "處理中...";
-            downloadAllBtn.disabled = true;
+            // 建立一個全新的 PDF 實例來承載修改，不污染原本的 currentPdfDoc
+            const exportPdf = await PDFLib.PDFDocument.create();
+            const copiedPages = await exportPdf.copyPages(currentPdfDoc, pageIndicesToExport);
 
+            // 準備：浮水印資源
+            let wmFont = null;
+            if (enableWmCb.checked && wmText.value.trim() !== '') {
+                // 使用內建標準字型 (目前優化支援英數)
+                wmFont = await exportPdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
+            }
+
+            // 準備：簽名檔資源
+            let embedSigImg = null;
+            if (enableSigCb.checked && isSigReady) {
+                const sigDataUrl = sigCanvas.toDataURL("image/png");
+                embedSigImg = await exportPdf.embedPng(sigDataUrl);
+            }
+
+            // 逐頁處理所有操作：旋轉 -> 浮水印 -> 簽名
+            copiedPages.forEach((page, idx) => {
+                const originalIdx = pageIndicesToExport[idx];
+                const { width, height } = page.getSize();
+
+                // 1. 套用旋轉
+                if (pageRotations[originalIdx]) {
+                    const currentAngle = page.getRotation().angle;
+                    page.setRotation(PDFLib.degrees(currentAngle + pageRotations[originalIdx]));
+                }
+
+                // 重新取得可能因旋轉改變的寬高 (供圖層定位使用)
+                const effectiveWidth = page.getRotation().angle % 180 === 0 ? width : height;
+                const effectiveHeight = page.getRotation().angle % 180 === 0 ? height : width;
+
+                // 2. 套用浮水印
+                if (wmFont) {
+                    const text = wmText.value;
+                    const size = parseInt(wmSize.value);
+                    const textWidth = wmFont.widthOfTextAtSize(text, size);
+                    const textHeight = wmFont.heightAtSize(size);
+                    
+                    page.drawText(text, {
+                        x: effectiveWidth / 2 - textWidth / 2 + (textHeight/2), 
+                        y: effectiveHeight / 2 - textHeight / 2,
+                        size: size,
+                        font: wmFont,
+                        color: PDFLib.rgb(0.6, 0.6, 0.6), // 灰色
+                        opacity: parseFloat(wmOpacity.value),
+                        rotate: PDFLib.degrees(45),
+                    });
+                }
+
+                // 3. 套用簽名檔
+                if (embedSigImg) {
+                    const targetPages = sigPages.value;
+                    const isFirstPage = idx === 0;
+                    const isLastPage = idx === copiedPages.length - 1;
+
+                    if (targetPages === 'all' || (targetPages === 'first' && isFirstPage) || (targetPages === 'last' && isLastPage)) {
+                        // 縮放簽名檔 (預設寬度控制在頁面寬度的 1/4)
+                        const scaleFactor = (effectiveWidth / 4) / embedSigImg.width;
+                        const sigDims = embedSigImg.scale(scaleFactor);
+                        
+                        const pos = sigPosition.value;
+                        const margin = 40;
+                        let x = 0, y = 0;
+
+                        if (pos === 'br') { x = effectiveWidth - sigDims.width - margin; y = margin; }
+                        if (pos === 'bl') { x = margin; y = margin; }
+                        if (pos === 'tr') { x = effectiveWidth - sigDims.width - margin; y = effectiveHeight - sigDims.height - margin; }
+                        if (pos === 'tl') { x = margin; y = effectiveHeight - sigDims.height - margin; }
+
+                        page.drawImage({
+                            image: embedSigImg,
+                            x: x,
+                            y: y,
+                            width: sigDims.width,
+                            height: sigDims.height,
+                        });
+                    }
+                }
+
+                exportPdf.addPage(page);
+            });
+
+            // 儲存並下載
+            const pdfBytes = await exportPdf.save();
+            const blob = new Blob([pdfBytes], { type: "application/pdf" });
+            triggerDownload(blob, filenamePrefix + fileNameDisplay.textContent);
+        }
+
+        // 按鈕綁定
+        downloadAllBtn.addEventListener('click', async () => {
+            const btnTextOriginal = downloadAllBtn.innerHTML;
+            downloadAllBtn.innerHTML = "處理中...";
+            downloadAllBtn.disabled = true;
             try {
-                // 套用旋轉
                 const allPageIndices = Array.from({ length: currentPdfDoc.getPageCount() }, (_, i) => i);
-                applyRotationsToDocument(currentPdfDoc, allPageIndices);
-                
-                // 儲存並下載
-                const pdfBytes = await currentPdfDoc.save();
-                const blob = new Blob([pdfBytes], { type: "application/pdf" });
-                triggerDownload(blob, "Processed_" + originalFileName);
-                
-                // 重置旋轉紀錄 (因為已經套用到底層 document 了)
-                pageRotations = {}; 
+                await exportProcessedPdf(allPageIndices, "Processed_");
             } catch (err) {
                 console.error(err);
                 alert("匯出失敗，請重試。");
             } finally {
-                downloadAllBtn.textContent = "匯出完整檔案";
+                downloadAllBtn.innerHTML = btnTextOriginal;
                 downloadAllBtn.disabled = false;
             }
         });
 
-        // 匯出選取頁面 (分割與旋轉)
         downloadSelectedBtn.addEventListener('click', async () => {
-            if (!currentPdfDoc || selectedPages.size === 0) return;
-            
-            const originalFileName = fileNameDisplay.textContent;
-            const btnText = downloadSelectedBtn.textContent;
+            const btnTextOriginal = downloadSelectedBtn.textContent;
             downloadSelectedBtn.textContent = "處理中...";
             downloadSelectedBtn.disabled = true;
-
             try {
-                // 建立新的 PDF (用於擷取選取頁面)
-                const newPdf = await PDFLib.PDFDocument.create();
-                
-                // 將 Set 轉為排序好的陣列，確保匯出順序正確
                 const sortedSelectedIndices = Array.from(selectedPages).sort((a, b) => a - b);
-                
-                // 複製頁面
-                const copiedPages = await newPdf.copyPages(currentPdfDoc, sortedSelectedIndices);
-                
-                copiedPages.forEach((page, idx) => {
-                    // 若該頁面有旋轉紀錄，也一併套用
-                    const originalIdx = sortedSelectedIndices[idx];
-                    if (pageRotations[originalIdx]) {
-                         const currentAngle = page.getRotation().angle;
-                         page.setRotation(PDFLib.degrees(currentAngle + pageRotations[originalIdx]));
-                    }
-                    newPdf.addPage(page);
-                });
-
-                // 儲存並下載
-                const pdfBytes = await newPdf.save();
-                const blob = new Blob([pdfBytes], { type: "application/pdf" });
-                triggerDownload(blob, "Extracted_" + originalFileName);
-
+                await exportProcessedPdf(sortedSelectedIndices, "Extracted_");
             } catch (err) {
                 console.error(err);
                 alert("匯出失敗，請重試。");
             } finally {
-                downloadSelectedBtn.textContent = btnText;
+                downloadSelectedBtn.textContent = btnTextOriginal;
                 downloadSelectedBtn.disabled = false;
             }
         });
@@ -482,6 +688,17 @@
             selectedPages.clear();
             thumbnailsContainer.innerHTML = '';
             updateDownloadButtons();
+            
+            // 重置階段 3 UI
+            enableWmCb.checked = false;
+            wmControls.classList.add('opacity-50', 'pointer-events-none');
+            enableSigCb.checked = false;
+            sigControls.classList.add('opacity-50', 'pointer-events-none');
+            originalSigImage = null;
+            isSigReady = false;
+            sigPlaceholderText.classList.remove('hidden');
+            sigCanvas.classList.add('hidden');
+            sigInput.value = '';
             
             uploadSection.classList.remove('hidden');
             workspaceSection.classList.add('hidden');
