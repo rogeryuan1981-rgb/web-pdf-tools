@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 防搜尋引擎索引，保持低調 -->
+    <meta name="robots" content="noindex, nofollow">
+    <title>前端 PDF 處理工具</title>
+    
+    <!-- 引入 Tailwind CSS 進行現代化排版 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
+    
+    <!-- 預先載入 PDF 處理函式庫 (階段2、3會用到核心邏輯) -->
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    
+    <style>
+        /* 自訂捲軸樣式微調 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col transition-colors duration-200 font-sans">
+
+    <!-- 頂部導覽列 -->
+    <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                <!-- PDF 圖示 SVG -->
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Web PDF Tools
+            </h1>
+            <button id="darkModeToggle" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors" title="切換深淺色主題">
+                <!-- 太陽/月亮圖示由 JS 動態切換 -->
+                <span id="themeIcon">🌙</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主要內容區 -->
+    <main class="flex-grow max-w-5xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
+        
+        <!-- 檔案上傳區塊 -->
+        <section id="uploadSection" class="w-full flex flex-col items-center justify-center p-16 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 hover:border-blue-500 dark:hover:border-blue-400 transition-all cursor-pointer text-center group">
+            <div class="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-full mb-4 group-hover:scale-110 transition-transform">
+                <svg class="w-10 h-10 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">點擊選取或拖曳 PDF 檔案至此</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">所有處理皆在您的設備上完成，檔案不會上傳至任何伺服器</p>
+            <!-- 隱藏的 input 標籤 -->
+            <input type="file" id="pdfInput" class="hidden" accept="application/pdf" multiple>
+        </section>
+
+        <!-- 工具列與工作區 (預留給階段2) -->
+        <section id="workspaceSection" class="hidden flex-col gap-6">
+            <!-- 檔案資訊橫幅 -->
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl flex flex-wrap gap-4 justify-between items-center shadow-sm">
+                <div class="flex items-center gap-3">
+                    <svg class="w-8 h-8 text-red-500" viewBox="0 0 24 24" fill="currentColor"><path d="M8.267 14.68c-.184 0-.308.018-.372.036v1.178c.076.018.171.023.302.023.479 0 .774-.242.774-.651 0-.366-.254-.586-.704-.586zm3.487.012c-.2 0-.33.018-.407.036v2.61c.077.018.201.018.313.018.817.0 1.349-.44 1.349-1.396.002-.772-.423-1.268-1.255-1.268z"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM9.498 16.19c-.309.29-.765.42-1.296.42a2.23 2.23 0 0 1-.308-.018v1.426H6.75v-3.936A7.558 7.558 0 0 1 8.21 14c.557 0 .935.128 1.165.34.205.193.307.458.307.773 0 .386-.061.806-.184 1.077zm4.32 1.436c-.361.344-.924.468-1.554.468a3.13 3.13 0 0 1-.365-.018v-3.947a5.525 5.525 0 0 1 .425-.018c.676 0 1.222.138 1.552.477.348.353.535.83.535 1.506 0 .666-.192 1.171-.593 1.532zm2.934-.515h-1.611v1.408h-1.142v-3.92h2.894v.86h-1.752v.677h1.611v.975z"/></svg>
+                    <span class="font-medium text-lg" id="fileNameDisplay">已載入檔案</span>
+                </div>
+                <button id="resetBtn" class="text-sm px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg font-medium transition-colors">
+                    關閉並重新選擇檔案
+                </button>
+            </div>
+            
+            <!-- 模組功能區 (準備套用階段 2 的功能) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 border-dashed flex flex-col items-center justify-center min-h-[150px] text-gray-400">
+                    <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    <span>階段 2：分割與合併</span>
+                </div>
+                <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 border-dashed flex flex-col items-center justify-center min-h-[150px] text-gray-400">
+                    <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    <span>階段 3：浮水印與簽名</span>
+                </div>
+                <div class="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 border-dashed flex flex-col items-center justify-center min-h-[150px] text-gray-400">
+                    <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    <span>階段 4：加密與輸出</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 頁尾與免責聲明 -->
+    <footer class="bg-gray-200/50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 mt-auto py-8 text-sm text-gray-600 dark:text-gray-400">
+        <div class="max-w-4xl mx-auto px-4 text-center space-y-3">
+            <p class="font-bold text-gray-800 dark:text-gray-200 text-base">⚠️ 隱私與免責聲明</p>
+            <p>1. 本工具為純前端本地端運算，您的檔案<strong>絕對不會</strong>上傳至任何外部伺服器，關閉網頁後資料即刻銷毀。</p>
+            <p>2. 本工具之「簽名」與「浮水印」功能僅提供圖層疊加，<strong>不具備</strong>數位憑證 (Digital Certificate) 加密驗證之法律效力。</p>
+            <p>3. 本工具僅供個人或內部測試使用，使用者需自行承擔處理機密文件或合約之法律責任。</p>
+        </div>
+    </footer>
+
+    <!-- 基礎互動腳本 -->
+    <script>
+        // ==========================================
+        // 模組：深淺色主題切換
+        // ==========================================
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const html = document.documentElement;
+
+        // 偵測並套用初始主題
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            html.classList.add('dark');
+            themeIcon.textContent = '☀️';
+        } else {
+            html.classList.remove('dark');
+            themeIcon.textContent = '🌙';
+        }
+
+        // 點擊切換事件
+        darkModeToggle.addEventListener('click', () => {
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.theme = 'light';
+                themeIcon.textContent = '🌙';
+            } else {
+                html.classList.add('dark');
+                localStorage.theme = 'dark';
+                themeIcon.textContent = '☀️';
+            }
+        });
+
+        // ==========================================
+        // 模組：檔案拖曳與選擇互動邏輯
+        // ==========================================
+        const uploadSection = document.getElementById('uploadSection');
+        const pdfInput = document.getElementById('pdfInput');
+        const workspaceSection = document.getElementById('workspaceSection');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // 1. 點擊上傳區塊觸發檔案選擇器
+        uploadSection.addEventListener('click', () => pdfInput.click());
+
+        // 2. 處理拖曳視覺效果
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+        });
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+        });
+
+        // 3. 處理拖放檔案事件
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+            
+            if (e.dataTransfer.files.length > 0) {
+                // 檢查是否為 PDF 檔案
+                const validFiles = Array.from(e.dataTransfer.files).filter(file => file.type === 'application/pdf');
+                
+                if (validFiles.length > 0) {
+                    // 將合格的檔案設定給 input
+                    const dataTransfer = new DataTransfer();
+                    validFiles.forEach(file => dataTransfer.items.add(file));
+                    pdfInput.files = dataTransfer.files;
+                    handleFilesSelected();
+                } else {
+                    alert('請上傳 PDF 格式的檔案！');
+                }
+            }
+        });
+
+        // 4. 點擊選擇檔案後的處理
+        pdfInput.addEventListener('change', () => {
+            if (pdfInput.files.length > 0) {
+                handleFilesSelected();
+            }
+        });
+
+        // 核心切換 UI 函數
+        function handleFilesSelected() {
+            if (pdfInput.files.length === 0) return;
+            
+            // 抓取檔名並顯示 (如果多個檔案則合併顯示)
+            const fileNames = Array.from(pdfInput.files).map(f => f.name).join('、 ');
+            fileNameDisplay.textContent = fileNames;
+            
+            // 隱藏上傳區，顯示工作區
+            uploadSection.classList.add('hidden');
+            workspaceSection.classList.remove('hidden');
+            workspaceSection.classList.add('flex');
+            
+            // TODO: (階段2) 這裡將會呼叫讀取 PDF 到記憶體的函數
+        }
+
+        // 5. 重新選擇檔案
+        resetBtn.addEventListener('click', () => {
+            pdfInput.value = ''; // 清空記憶中的檔案
+            fileNameDisplay.textContent = '';
+            
+            // 切換回上傳區 UI
+            uploadSection.classList.remove('hidden');
+            workspaceSection.classList.add('hidden');
+            workspaceSection.classList.remove('flex');
+            
+            // TODO: (階段2) 清除記憶體中的 PDF 資料與預覽畫面
+        });
+    </script>
+</body>
+</html>
