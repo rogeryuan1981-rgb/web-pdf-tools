@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>前端 PDF 處理大師R</title>
+    <title>前端 PDF 處理工具</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -17,6 +17,7 @@
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
     <style>
         ::-webkit-scrollbar { width: 8px; }
@@ -59,7 +60,6 @@
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col transition-colors duration-200 font-sans">
 
-    <!-- 頂部導覽列 -->
     <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
         <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-xl font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
@@ -74,7 +74,6 @@
 
     <main class="flex-grow max-w-5xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
         
-        <!-- 上傳區塊 -->
         <section id="uploadSection" class="w-full flex flex-col items-center justify-center p-16 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 hover:border-blue-500 dark:hover:border-blue-400 transition-all cursor-pointer text-center group relative overflow-hidden">
             <div id="loadingOverlay" class="hidden absolute inset-0 bg-white/80 dark:bg-gray-800/80 flex-col items-center justify-center z-10">
                 <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
@@ -90,9 +89,7 @@
             <input type="file" id="pdfInput" class="hidden" accept="application/pdf" multiple>
         </section>
 
-        <!-- 工作區 -->
         <section id="workspaceSection" class="hidden flex-col gap-6">
-            <!-- 工具列 -->
             <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl flex flex-wrap gap-4 justify-between items-center shadow-sm sticky top-20 z-20">
                 <div class="flex items-center gap-3">
                     <svg class="w-8 h-8 text-red-500" viewBox="0 0 24 24" fill="currentColor"><path d="M8.267 14.68c-.184 0-.308.018-.372.036v1.178c.076.018.171.023.302.023.479 0 .774-.242.774-.651 0-.366-.254-.586-.704-.586zm3.487.012c-.2 0-.33.018-.407.036v2.61c.077.018.201.018.313.018.817.0 1.349-.44 1.349-1.396.002-.772-.423-1.268-1.255-1.268z"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM9.498 16.19c-.309.29-.765.42-1.296.42a2.23 2.23 0 0 1-.308-.018v1.426H6.75v-3.936A7.558 7.558 0 0 1 8.21 14c.557 0 .935.128 1.165.34.205.193.307.458.307.773 0 .386-.061.806-.184 1.077zm4.32 1.436c-.361.344-.924.468-1.554.468a3.13 3.13 0 0 1-.365-.018v-3.947a5.525 5.525 0 0 1 .425-.018c.676 0 1.222.138 1.552.477.348.353.535.83.535 1.506 0 .666-.192 1.171-.593 1.532zm2.934-.515h-1.611v1.408h-1.142v-3.92h2.894v.86h-1.752v.677h1.611v.975z"/></svg>
@@ -102,11 +99,15 @@
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-2">
+                    <button id="pdfToExcelBtn" class="text-sm px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors shadow-sm flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        轉為 Excel
+                    </button>
                     <button id="downloadSelectedBtn" class="text-sm px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors hidden shadow-sm">
                         匯出選取頁面 (分割)
                     </button>
                     <button id="downloadAllBtn" class="text-sm px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm relative overflow-hidden group">
-                        套用並匯出檔案
+                        套用並匯出 PDF
                     </button>
                     <button id="resetBtn" class="text-sm px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg font-medium transition-colors">
                         重新選擇
@@ -114,10 +115,8 @@
                 </div>
             </div>
             
-            <!-- 模組設定區 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
-                <!-- 浮水印區塊 -->
                 <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col gap-4">
                     <div class="flex justify-between items-center">
                         <h3 class="text-lg font-bold flex items-center gap-2">
@@ -144,7 +143,6 @@
                     </div>
                 </div>
 
-                <!-- 簽名檔區塊 -->
                 <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col gap-4">
                     <div class="flex justify-between items-center">
                         <h3 class="text-lg font-bold flex items-center gap-2">
@@ -175,32 +173,29 @@
                 </div>
             </div>
 
-            <!-- 操作說明 -->
             <div class="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-3 rounded-lg text-sm flex items-start gap-2">
                 <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <p><strong>操作提示：</strong>您可以<strong>拖曳卡片來更改頁面順序</strong>。滑鼠移至卡片上，點選 <svg class="inline w-4 h-4 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> 可進入單頁編輯模式；點選 ↺ 可旋轉。直接點擊卡片可勾選進行分割匯出。</p>
+                <div class="space-y-1">
+                    <p><strong>操作提示：</strong>您可以<strong>拖曳卡片來更改頁面順序</strong>。滑鼠移至卡片上，點選 <svg class="inline w-4 h-4 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> 可進入單頁編輯模式；點選 ↺ 可旋轉。</p>
+                    <p class="text-xs text-blue-600 dark:text-blue-400">⚠️ <strong>PDF 轉 Excel 注意事項：</strong>純前端技術僅能進行「純文字結構與座標抽取」，無法完美還原複雜的表格格線或合併儲存格。</p>
+                </div>
             </div>
 
-            <!-- 縮圖預覽區 -->
             <div id="thumbnailsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
             
         </section>
     </main>
 
-    <!-- 編輯彈出視窗 (Modal) -->
     <div id="editModal" class="fixed inset-0 z-50 hidden bg-gray-900/90 flex-col backdrop-blur-sm">
-        <!-- Toolbar -->
         <div class="bg-white dark:bg-gray-800 shadow-md p-4 flex flex-wrap justify-between items-center z-10 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center gap-4">
                 <span class="font-bold text-lg mr-4">單頁進階編輯</span>
                 
-                <!-- 工具選擇 -->
                 <div class="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-lg">
                     <button id="toolWhiteout" class="px-3 py-1.5 text-sm font-medium rounded-md bg-white dark:bg-gray-700 shadow shadow-sm text-blue-600 dark:text-blue-400 transition-colors">立可白 (框選)</button>
                     <button id="toolText" class="px-3 py-1.5 text-sm font-medium rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">加文字 (點擊)</button>
                 </div>
                 
-                <!-- 文字設定 -->
                 <div id="textSettings" class="hidden items-center gap-3 border-l border-gray-300 dark:border-gray-600 pl-4">
                     <input type="color" id="editTextColor" value="#ff0000" class="w-8 h-8 rounded cursor-pointer border-0 p-0">
                     <div class="flex items-center gap-1">
@@ -217,14 +212,12 @@
             </div>
         </div>
         
-        <!-- Canvas Container -->
         <div class="flex-grow overflow-auto flex justify-center items-center p-8 relative" id="editCanvasContainer">
             <canvas id="baseCanvas" class="shadow-2xl absolute"></canvas>
             <canvas id="overlayCanvas" class="absolute cursor-crosshair"></canvas>
         </div>
     </div>
 
-    <!-- 頁尾 -->
     <footer class="bg-gray-200/50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 mt-auto py-8 text-sm text-gray-600 dark:text-gray-400">
         <div class="max-w-4xl mx-auto px-4 text-center space-y-3">
             <p class="font-bold text-gray-800 dark:text-gray-200 text-base">⚠️ 隱私與免責聲明</p>
@@ -250,6 +243,7 @@
         const thumbnailsContainer = document.getElementById('thumbnailsContainer');
         const downloadAllBtn = document.getElementById('downloadAllBtn');
         const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
+        const pdfToExcelBtn = document.getElementById('pdfToExcelBtn'); // Excel Button
         
         const editModal = document.getElementById('editModal');
         const baseCanvas = document.getElementById('baseCanvas');
@@ -800,6 +794,92 @@
         };
 
         document.getElementById('resetBtn').onclick = () => { location.reload(); }; 
+
+        // ==========================================
+        // PDF 轉 Excel 核心邏輯
+        // ==========================================
+        pdfToExcelBtn.onclick = async () => {
+            if (pdfInput.files.length === 0) return;
+            
+            const btnOriginalHTML = pdfToExcelBtn.innerHTML;
+            pdfToExcelBtn.innerHTML = '<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> 處理中...';
+            pdfToExcelBtn.disabled = true;
+
+            try {
+                const workbook = XLSX.utils.book_new();
+
+                for (let fileIdx = 0; fileIdx < pdfInput.files.length; fileIdx++) {
+                    const file = pdfInput.files[fileIdx];
+                    const arrayBuffer = await file.arrayBuffer();
+                    
+                    // 使用 pdf.js 提取文字
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    let allRows = [];
+
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const items = textContent.items;
+
+                        // 依據 Y 座標分組 (容許微小誤差)
+                        const rowMap = new Map();
+                        const TOLERANCE = 4;
+
+                        items.forEach(item => {
+                            const x = item.transform[4];
+                            const y = item.transform[5];
+
+                            let rowY = null;
+                            for (let key of rowMap.keys()) {
+                                if (Math.abs(key - y) < TOLERANCE) {
+                                    rowY = key;
+                                    break;
+                                }
+                            }
+
+                            if (rowY === null) {
+                                rowY = y;
+                                rowMap.set(rowY, []);
+                            }
+                            rowMap.get(rowY).push({ str: item.str, x: x });
+                        });
+
+                        // 依據 Y 座標由上而下排序
+                        const sortedY = Array.from(rowMap.keys()).sort((a, b) => b - a);
+
+                        sortedY.forEach(y => {
+                            // 同一行依據 X 座標由左至右排序
+                            const rowItems = rowMap.get(y).sort((a, b) => a.x - b.x);
+                            const rowTextArray = rowItems.map(item => item.str.trim()).filter(str => str.length > 0);
+                            if (rowTextArray.length > 0) {
+                                allRows.push(rowTextArray);
+                            }
+                        });
+
+                        // 分頁之間加入空行
+                        allRows.push([]);
+                    }
+
+                    // 處理工作表名稱 (Excel 限制長度 31，且不可有特殊符號)
+                    let safeSheetName = file.name.replace(/\.[^/.]+$/, "").replace(/[\\/*?:\[\]]/g, "_").substring(0, 31);
+                    if (!safeSheetName) safeSheetName = "Sheet" + (fileIdx + 1);
+
+                    const worksheet = XLSX.utils.aoa_to_sheet(allRows);
+                    XLSX.utils.book_append_sheet(workbook, worksheet, safeSheetName);
+                }
+
+                // 匯出 Excel
+                XLSX.writeFile(workbook, "PDF_Export.xlsx");
+
+            } catch (err) {
+                console.error(err);
+                alert("轉換 Excel 發生錯誤，這可能是由於文件加密或格式不受支援。");
+            } finally {
+                pdfToExcelBtn.innerHTML = btnOriginalHTML;
+                pdfToExcelBtn.disabled = false;
+            }
+        };
+
     </script>
 </body>
 </html>
