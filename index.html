@@ -19,8 +19,6 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
-    <script src="https://unpkg.com/@librepdf/pdf-encrypt-browser@1.0.2/dist/pdf-encrypt.min.js"></script>
-    
     <style>
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -94,7 +92,7 @@
         <section id="workspaceSection" class="hidden flex-col gap-6">
             <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl flex flex-wrap gap-4 justify-between items-center shadow-sm sticky top-20 z-20">
                 <div class="flex items-center gap-3">
-                    <svg class="w-8 h-8 text-red-500" viewBox="0 0 24 24" fill="currentColor"><path d="M8.267 14.68c-.184 0-.308.018-.372.036v1.178c.076.018.171.023.302.023.479 0 .774-.242.774-.651 0-.366-.254-.586-.704-.586zm3.487.012c-.2 0-.33.018-.407.036v2.61c.077.018.201.018.313.018.817.0 1.349-.44 1.349-1.396.002-.772-.423-1.268-1.255-1.268z"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM9.498 16.19c-.309.29-.765.42-1.296.42a2.23 2.23 0 0 1-.308-.018v1.426H6.75v-3.936A7.558 7.558 0 0 1 8.21 14c.557 0 .935.128.165.34.205.193.307.458.307.773 0 .386-.061.806-.184 1.077zm4.32 1.436c-.361.344-.924.468-1.554.468a3.13 3.13 0 0 1-.365-.018v-3.947a5.525 5.525 0 0 1 .425-.018c.676 0 .1222.138 1.552.477.348.353.535.83.535 1.506 0 .666-.192 1.171-.593 1.532zm2.934-.515h-1.611v1.408h-1.142v-3.92h2.894v.86h-1.752v.677h1.611v.975z"/></svg>
+                    <svg class="w-8 h-8 text-red-500" viewBox="0 0 24 24" fill="currentColor"><path d="M8.267 14.68c-.184 0-.308.018-.372.036v1.178c.076.018.171.023.302.023.479 0 .774-.242.774-.651 0-.366-.254-.586-.704-.586zm3.487.012c-.2 0-.33.018-.407.036v2.61c.077.018.201.018.313.018.817.0 1.349-.44 1.349-1.396.002-.772-.423-1.268-1.255-1.268z"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM9.498 16.19c-.309.29-.765.42-1.296.42a2.23 2.23 0 0 1-.308-.018v1.426H6.75v-3.936A7.558 7.558 0 0 1 8.21 14c.557 0 .935.128 1.165.34.205.193.307.458.307.773 0 .386-.061.806-.184 1.077zm4.32 1.436c-.361.344-.924.468-1.554.468a3.13 3.13 0 0 1-.365-.018v-3.947a5.525 5.525 0 0 1 .425-.018c.676 0 1.222.138 1.552.477.348.353.535.83.535 1.506 0 .666-.192 1.171-.593 1.532zm2.934-.515h-1.611v1.408h-1.142v-3.92h2.894v.86h-1.752v.677h1.611v.975z"/></svg>
                     <div>
                         <span class="font-medium text-lg block truncate max-w-[200px] sm:max-w-xs" id="fileNameDisplay">已載入檔案</span>
                         <span class="text-xs text-gray-500 dark:text-gray-400" id="pageCountDisplay">共 0 頁</span>
@@ -188,11 +186,13 @@
                     <div id="encryptControls" class="flex flex-col gap-3 opacity-50 pointer-events-none transition-opacity">
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">開啟文件密碼</label>
-                            <input type="password" id="pdfPassword" placeholder="請輸入密碼" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none">
+                            <input type="password" id="pdfPassword" placeholder="請輸入加密密碼" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none">
                         </div>
-                        <p class="text-[11px] text-gray-400 dark:text-gray-500 leading-relaxed">
-                            💡 啟用後，任何人開啟此 PDF 皆須輸入此密碼。此加密演算法在您的瀏覽器本機內直接運算。（註：啟用加密時浮水印將自動暫停以避免衝突）
-                        </p>
+                        <div class="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-lg">
+                            <p class="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed font-medium">
+                                ⚠️ <strong>提示：</strong>啟用此功能時，產出的檔案將送往後端伺服器進行安全加密運算。
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -246,12 +246,15 @@
     <footer class="bg-gray-200/50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 mt-auto py-8 text-sm text-gray-600 dark:text-gray-400">
         <div class="max-w-4xl mx-auto px-4 text-center space-y-3">
             <p class="font-bold text-gray-800 dark:text-gray-200 text-base">⚠️ 隱私與免責聲明</p>
-            <p>1. 本工具為純前端本地端運算，您的檔案<strong>絕對不會</strong>上傳至任何外部伺服器。</p>
-            <p>2. 單頁編輯之「立可白/新增文字」功能僅為圖層覆蓋，並非修改 PDF 底層原始程式碼。</p>
+            <p>1. 本工具預設為純前端本地端運算，您的檔案<strong>絕不會</strong>上傳至任何外部伺服器。</p>
+            <p>2. 僅當您主動勾選「PDF 安全性加密」功能時，處理後的成果將傳送至後端進行密碼封裝。</p>
+            <p>3. 單頁編輯之「立可白/新增文字」功能僅為圖層覆蓋，並非修改 PDF 底層原始程式碼。</p>
         </div>
     </footer>
 
     <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
         let currentPdfDoc = null; 
         let currentPdfBytes = null; 
         let pageRotations = {};   
@@ -531,7 +534,7 @@
                 workspaceSection.classList.remove('hidden');
                 workspaceSection.classList.add('flex');
             } catch (error) {
-                alert("處理官方文件時發生錯誤，請確認檔案是否有加密。");
+                alert("處理檔案發生錯誤，請確認檔案是否有加密。");
             } finally {
                 document.getElementById('loadingOverlay').classList.add('hidden');
                 document.getElementById('loadingOverlay').classList.remove('flex');
@@ -641,34 +644,20 @@
         const sigCanvas = document.getElementById('sigCanvas');
         const sigCtx = sigCanvas.getContext('2d');
 
-        // 加密與浮水印互斥邏輯
-        document.getElementById('enableEncryptCb').onchange = (e) => {
-            document.getElementById('encryptControls').classList.toggle('opacity-50', !e.target.checked);
-            document.getElementById('encryptControls').classList.toggle('pointer-events-none', !e.target.checked);
-            if (e.target.checked) {
-                const wmCb = document.getElementById('enableWmCb');
-                if (wmCb.checked) {
-                    wmCb.checked = false;
-                    document.getElementById('wmControls').classList.add('opacity-50', 'pointer-events-none');
-                }
-            }
-        };
-
         document.getElementById('enableWmCb').onchange = (e) => {
             document.getElementById('wmControls').classList.toggle('opacity-50', !e.target.checked);
             document.getElementById('wmControls').classList.toggle('pointer-events-none', !e.target.checked);
-            if (e.target.checked) {
-                const encCb = document.getElementById('enableEncryptCb');
-                if (encCb.checked) {
-                    encCb.checked = false;
-                    document.getElementById('encryptControls').classList.add('opacity-50', 'pointer-events-none');
-                }
-            }
         };
         
         document.getElementById('enableSigCb').onchange = (e) => {
             document.getElementById('sigControls').classList.toggle('opacity-50', !e.target.checked);
             document.getElementById('sigControls').classList.toggle('pointer-events-none', !e.target.checked);
+        };
+
+        // 加密開關連動邏輯
+        document.getElementById('enableEncryptCb').onchange = (e) => {
+            document.getElementById('encryptControls').classList.toggle('opacity-50', !e.target.checked);
+            document.getElementById('encryptControls').classList.toggle('pointer-events-none', !e.target.checked);
         };
 
         document.getElementById('sigUploadBtn').onclick = () => document.getElementById('sigInput').click();
@@ -812,22 +801,37 @@
             }
 
             let pdfBytes = await exportPdf.save();
+            const outputFileName = filenamePrefix + document.getElementById('fileNameDisplay').textContent;
 
             // ==========================================
-            // 【最安全防丟失二進位加密處理機制】
+            // 【核心變更】如果啟用了安全性加密，則將檔案傳送到後端 API
             // ==========================================
             if (document.getElementById('enableEncryptCb').checked) {
-                const pwd = document.getElementById('pdfPassword').value;
-                if (pwd) {
-                    try {
-                        // 使用 @librepdf/pdf-encrypt-browser 函式庫，直接對完整 PDF 串流進行原封不動的字典加密編碼
-                        pdfBytes = await window.pdfEncrypt.encrypt(pdfBytes, pwd, pwd);
-                    } catch (err) {
-                        console.error("加密錯誤:", err);
-                        alert("安全性本地加密發生錯誤，將改為普通不加密導出。");
-                    }
+                const password = document.getElementById('pdfPassword').value;
+                if (!password) {
+                    alert("⚠️ 提示：您開啟了安全加密開關，但未輸入任何密碼，將以未加密狀態匯出。");
                 } else {
-                    alert("⚠️ 提示：您啟動了安全加密，但未輸入密碼。本次匯出將不帶有密碼。");
+                    try {
+                        const blob = new Blob([pdfBytes], { type: "application/pdf" });
+                        const formData = new FormData();
+                        formData.append("pdf", blob, outputFileName);
+                        formData.append("password", password);
+
+                        // 發送到你的後端加密端點（請根據實際後端路徑修改網址）
+                        const response = await fetch("/api/encrypt-pdf", {
+                            method: "POST",
+                            body: formData
+                        });
+
+                        if (!response.ok) throw new Error("後端加密處理失敗");
+
+                        // 接收後端處理完的二進位加密 PDF
+                        const encryptedBuffer = await response.arrayBuffer();
+                        pdfBytes = new Uint8Array(encryptedBuffer);
+                    } catch (err) {
+                        console.error(err);
+                        alert("❌ 觸發後端安全性加密時發生錯誤，請確認後端服務是否正常。本次改為普通不加密導出。");
+                    }
                 }
             }
 
@@ -835,7 +839,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = filenamePrefix + document.getElementById('fileNameDisplay').textContent;
+            a.download = outputFileName;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
