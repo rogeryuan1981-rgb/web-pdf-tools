@@ -19,7 +19,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/@librepdf/pdf-encrypt-browser@1.0.2/dist/pdf-encrypt.min.js"></script>
     
     <style>
         ::-webkit-scrollbar { width: 8px; }
@@ -191,7 +191,7 @@
                             <input type="password" id="pdfPassword" placeholder="請輸入密碼" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none">
                         </div>
                         <p class="text-[11px] text-gray-400 dark:text-gray-500 leading-relaxed">
-                            💡 啟用後，任何人開啟此 PDF 皆須輸入此密碼。此加密運算完全在瀏覽器本機內執行。（註：啟用加密時浮水印將自動暫停以避免庫衝突）
+                            💡 啟用後，任何人開啟此 PDF 皆須輸入此密碼。此加密演算法在您的瀏覽器本機內直接運算。（註：啟用加密時浮水印將自動暫停以避免衝突）
                         </p>
                     </div>
                 </div>
@@ -252,8 +252,6 @@
     </footer>
 
     <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
         let currentPdfDoc = null; 
         let currentPdfBytes = null; 
         let pageRotations = {};   
@@ -533,7 +531,7 @@
                 workspaceSection.classList.remove('hidden');
                 workspaceSection.classList.add('flex');
             } catch (error) {
-                alert("處理發生錯誤，請確認檔案是否有加密。");
+                alert("處理官方文件時發生錯誤，請確認檔案是否有加密。");
             } finally {
                 document.getElementById('loadingOverlay').classList.add('hidden');
                 document.getElementById('loadingOverlay').classList.remove('flex');
@@ -643,7 +641,7 @@
         const sigCanvas = document.getElementById('sigCanvas');
         const sigCtx = sigCanvas.getContext('2d');
 
-        // 互斥開關：如果勾選加密，就強制關閉文字浮水印
+        // 加密與浮水印互斥邏輯
         document.getElementById('enableEncryptCb').onchange = (e) => {
             document.getElementById('encryptControls').classList.toggle('opacity-50', !e.target.checked);
             document.getElementById('encryptControls').classList.toggle('pointer-events-none', !e.target.checked);
@@ -714,9 +712,8 @@
 
         async function exportProcessedPdf(pageIndicesToExport, filenamePrefix) {
             if (!currentPdfDoc || pageIndicesToExport.length === 0) return;
-            
-            // 先使用原架構進行基礎合併、立可白、簽名檔渲染
             const exportPdf = await PDFLib.PDFDocument.create();
+            
             const copiedPages = await exportPdf.copyPages(currentPdfDoc, pageIndicesToExport);
 
             let wmFont = null;
@@ -735,6 +732,7 @@
 
                 if (pageEdits[originalIdx] && pageEdits[originalIdx].length > 0) {
                     const edits = pageEdits[originalIdx];
+                    
                     for (const edit of edits) {
                         if (edit.type === 'whiteout') {
                             const rect = edit.data;
@@ -760,9 +758,13 @@
                             tCtx.fillText(txt.text, 5, 5);
 
                             const textImage = await exportPdf.embedPng(tCanvas.toDataURL('image/png'));
+                            
                             const renderHeight = tCanvas.height / scale;
                             page.drawImage(textImage, {
-                                x: txt.x, y: txt.y - renderHeight, width: tCanvas.width / scale, height: renderHeight
+                                x: txt.x, 
+                                y: txt.y - renderHeight, 
+                                width: tCanvas.width / scale,
+                                height: renderHeight
                             });
                         }
                     }
@@ -809,47 +811,27 @@
                 exportPdf.addPage(page);
             }
 
-            let finalPdfBytes = await exportPdf.save();
+            let pdfBytes = await exportPdf.save();
 
             // ==========================================
-            // 【加密核心中繼處理】如果勾選加密，在此攔截並重新封裝
+            // 【最安全防丟失二進位加密處理機制】
             // ==========================================
             if (document.getElementById('enableEncryptCb').checked) {
-                const password = document.getElementById('pdfPassword').value;
-                if (password) {
+                const pwd = document.getElementById('pdfPassword').value;
+                if (pwd) {
                     try {
-                        const { jsPDF } = window.jspdf;
-                        
-                        // 讀取剛剛暫存生成的二進位串流
-                        const blobForEncryption = new Blob([finalPdfBytes], { type: "application/pdf" });
-                        const arrayBuffer = await blobForEncryption.arrayBuffer();
-                        const uint8Array = new Uint8Array(arrayBuffer);
-                        
-                        // 建立一個帶有最高強度 RC4/AES 本地加密安全字典的空 jsPDF 實例
-                        const encryptDoc = new jsPDF({
-                            encryption: {
-                                userPassword: password,
-                                ownerPassword: password,
-                                userPermissions: ["print", "modify", "copy", "annot-modify"]
-                            }
-                        });
-                        
-                        // 將原始 PDF 位元組完全封裝進加密對象中
-                        finalPdfBytes = encryptDoc.output('arraybuffer', { 
-                            putOnlyRawData: true,
-                            rawData: uint8Array 
-                        });
-                    } catch (encErr) {
-                        console.error("加密封裝失敗:", encErr);
-                        alert("安全性加密失敗，改為普通匯出。");
+                        // 使用 @librepdf/pdf-encrypt-browser 函式庫，直接對完整 PDF 串流進行原封不動的字典加密編碼
+                        pdfBytes = await window.pdfEncrypt.encrypt(pdfBytes, pwd, pwd);
+                    } catch (err) {
+                        console.error("加密錯誤:", err);
+                        alert("安全性本地加密發生錯誤，將改為普通不加密導出。");
                     }
                 } else {
-                    alert("⚠️ 提示：您開啟了安全加密開關，但未輸入任何密碼。");
+                    alert("⚠️ 提示：您啟動了安全加密，但未輸入密碼。本次匯出將不帶有密碼。");
                 }
             }
 
-            // 下載動作
-            const blob = new Blob([finalPdfBytes], { type: "application/pdf" });
+            const blob = new Blob([pdfBytes], { type: "application/pdf" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -860,7 +842,6 @@
             URL.revokeObjectURL(url);
         }
 
-        // 綁定套用匯出按鈕
         downloadAllBtn.onclick = async () => {
             downloadAllBtn.textContent = "處理中...";
             try {
