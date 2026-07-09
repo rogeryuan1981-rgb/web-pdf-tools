@@ -190,7 +190,7 @@
                         </div>
                         <div class="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-lg">
                             <p class="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed font-medium">
-                                ⚠️ <strong>提示：</strong>啟用此功能時，產出的檔案將送往後端伺服器進行安全加密運算。
+                                <strong>💡 提示：</strong>啟用此功能時，將透過瀏覽器端動態載入輕量套件進行 AES 級加密，檔案<strong>絕不會</strong>離開您的設備。
                             </p>
                         </div>
                     </div>
@@ -199,7 +199,7 @@
             </div>
 
             <div class="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-3 rounded-lg text-sm flex items-start gap-2">
-                <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <div class="space-y-1">
                     <p><strong>操作提示：</strong>您可以<strong>拖曳卡片來更改頁面順序</strong>。滑鼠移至卡片上，點選 <svg class="inline w-4 h-4 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> 可進入單頁編輯模式；點選 ↺ 可旋轉。</p>
                     <p class="text-xs text-blue-600 dark:text-blue-400">⚠️ <strong>PDF 轉 Excel 注意事項：</strong>純前端技術僅能進行「純文字結構與座標抽取」，無法完美還原複雜的表格格線或合併儲存格。</p>
@@ -246,8 +246,8 @@
     <footer class="bg-gray-200/50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 mt-auto py-8 text-sm text-gray-600 dark:text-gray-400">
         <div class="max-w-4xl mx-auto px-4 text-center space-y-3">
             <p class="font-bold text-gray-800 dark:text-gray-200 text-base">⚠️ 隱私與免責聲明</p>
-            <p>1. 本工具預設為純前端本地端運算，您的檔案<strong>絕不會</strong>上傳至任何外部伺服器。</p>
-            <p>2. 僅當您主動勾選「PDF 安全性加密」功能時，處理後的成果將傳送至後端進行密碼封裝。</p>
+            <p>1. 本工具為純前端本地端運算，您的檔案<strong>絕不會</strong>上傳至任何外部伺服器。</p>
+            <p>2. 「PDF 安全性加密」功能使用 ESM 動態引入前端套件，處理過程皆於本機記憶體完成。</p>
             <p>3. 單頁編輯之「立可白/新增文字」功能僅為圖層覆蓋，並非修改 PDF 底層原始程式碼。</p>
         </div>
     </footer>
@@ -804,7 +804,7 @@
             const outputFileName = filenamePrefix + document.getElementById('fileNameDisplay').textContent;
 
             // ==========================================
-            // 【核心變更】如果啟用了安全性加密，則將檔案傳送到後端 API
+            // 【核心變更】純前端安全性加密 (@pdfsmaller/pdf-encrypt-lite)
             // ==========================================
             if (document.getElementById('enableEncryptCb').checked) {
                 const password = document.getElementById('pdfPassword').value;
@@ -812,25 +812,17 @@
                     alert("⚠️ 提示：您開啟了安全加密開關，但未輸入任何密碼，將以未加密狀態匯出。");
                 } else {
                     try {
-                        const blob = new Blob([pdfBytes], { type: "application/pdf" });
-                        const formData = new FormData();
-                        formData.append("pdf", blob, outputFileName);
-                        formData.append("password", password);
-
-                        // 發送到你的後端加密端點（請根據實際後端路徑修改網址）
-                        const response = await fetch("/api/encrypt-pdf", {
-                            method: "POST",
-                            body: formData
-                        });
-
-                        if (!response.ok) throw new Error("後端加密處理失敗");
-
-                        // 接收後端處理完的二進位加密 PDF
-                        const encryptedBuffer = await response.arrayBuffer();
-                        pdfBytes = new Uint8Array(encryptedBuffer);
+                        // 使用 ESM 動態引入，避免破壞全域作用域與初始載入速度
+                        const { encryptPDF } = await import('https://esm.sh/@pdfsmaller/pdf-encrypt-lite');
+                        
+                        // 執行純前端加密運算 (傳入檔案、開啟密碼、擁有者密碼)
+                        const encryptedBytes = await encryptPDF(new Uint8Array(pdfBytes), password, password);
+                        
+                        // 將加密後的陣列覆蓋回去準備匯出
+                        pdfBytes = new Uint8Array(encryptedBytes);
                     } catch (err) {
                         console.error(err);
-                        alert("❌ 觸發後端安全性加密時發生錯誤，請確認後端服務是否正常。本次改為普通不加密導出。");
+                        alert("❌ 執行前端加密時發生錯誤，請確認網路連線是否正常。本次將改為普通不加密導出。");
                     }
                 }
             }
