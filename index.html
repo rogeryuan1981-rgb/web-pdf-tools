@@ -115,7 +115,7 @@
                 </div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 
                 <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col gap-4">
                     <div class="flex justify-between items-center">
@@ -196,6 +196,25 @@
                     </div>
                 </div>
 
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold flex items-center gap-2">
+                            <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5h14M5 19h14"></path></svg>
+                            PDF 無損瘦身
+                        </h3>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="enableCompressCb" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600"></div>
+                        </label>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">壓縮 PDF 內部物件與索引，不降低圖片畫質、不改變文字及頁面內容。已最佳化的 PDF 可能無法再縮小。</p>
+                        <div id="compressResult" class="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-lg text-[11px] text-emerald-800 dark:text-emerald-300 leading-relaxed" aria-live="polite">
+                            匯出時將自動選用較小的無損版本。
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <div class="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-3 rounded-lg text-sm flex items-start gap-2">
@@ -257,6 +276,7 @@
 
         let currentPdfDoc = null; 
         let currentPdfBytes = null; 
+        let sourceFileSize = 0;
         let pageRotations = {};   
         let selectedPages = new Set(); 
         
@@ -270,6 +290,14 @@
         const downloadAllBtn = document.getElementById('downloadAllBtn');
         const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
         const pdfToExcelBtn = document.getElementById('pdfToExcelBtn'); 
+
+        function formatBytes(bytes) {
+            if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            const unitIndex = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+            const value = bytes / Math.pow(1024, unitIndex);
+            return `${value.toFixed(unitIndex === 0 ? 0 : 2)} ${units[unitIndex]}`;
+        }
         
         const editModal = document.getElementById('editModal');
         const baseCanvas = document.getElementById('baseCanvas');
@@ -510,6 +538,7 @@
             try {
                 const mergedPdf = await PDFLib.PDFDocument.create();
                 let outputFileName = pdfInput.files.length > 1 ? "Merged_" + pdfInput.files[0].name : pdfInput.files[0].name;
+                sourceFileSize = Array.from(pdfInput.files).reduce((total, file) => total + file.size, 0);
 
                 for (let i = 0; i < pdfInput.files.length; i++) {
                     const arrayBuffer = await pdfInput.files[i].arrayBuffer();
@@ -526,7 +555,7 @@
                 pageEdits = {}; 
 
                 document.getElementById('fileNameDisplay').textContent = outputFileName;
-                document.getElementById('pageCountDisplay').textContent = `共 ${currentPdfDoc.getPageCount()} 頁`;
+                document.getElementById('pageCountDisplay').textContent = `共 ${currentPdfDoc.getPageCount()} 頁 · 原始 ${formatBytes(sourceFileSize)}`;
                 
                 await renderThumbnails(currentPdfBytes);
 
@@ -800,8 +829,36 @@
                 exportPdf.addPage(page);
             }
 
-            let pdfBytes = await exportPdf.save();
-            const outputFileName = filenamePrefix + document.getElementById('fileNameDisplay').textContent;
+            const uncompressedBytes = await exportPdf.save({
+                useObjectStreams: false,
+                addDefaultPage: false,
+                objectsPerTick: 50
+            });
+            let pdfBytes = uncompressedBytes;
+            let compressionApplied = false;
+
+            if (document.getElementById('enableCompressCb').checked) {
+                const optimizedBytes = await exportPdf.save({
+                    useObjectStreams: true,
+                    addDefaultPage: false,
+                    objectsPerTick: 50
+                });
+                if (optimizedBytes.length < uncompressedBytes.length) {
+                    pdfBytes = optimizedBytes;
+                    compressionApplied = true;
+                }
+
+                const savedBytes = uncompressedBytes.length - pdfBytes.length;
+                const savedPercent = uncompressedBytes.length > 0 ? (savedBytes / uncompressedBytes.length) * 100 : 0;
+                document.getElementById('compressResult').innerHTML = compressionApplied
+                    ? `✅ 無損最佳化完成：${formatBytes(uncompressedBytes.length)} → <strong>${formatBytes(pdfBytes.length)}</strong>，節省 ${savedPercent.toFixed(1)}%。`
+                    : `ℹ️ 此檔案已接近最佳狀態，已保留較小版本（${formatBytes(pdfBytes.length)}）。`;
+            } else {
+                document.getElementById('compressResult').textContent = '無損瘦身未啟用。';
+            }
+
+            const compressionPrefix = compressionApplied ? 'Compressed_' : '';
+            const outputFileName = compressionPrefix + filenamePrefix + document.getElementById('fileNameDisplay').textContent;
 
             // ==========================================
             // 【核心變更】純前端安全性加密 (@pdfsmaller/pdf-encrypt-lite)
