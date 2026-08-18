@@ -273,21 +273,11 @@
                         <div class="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-3">
                             <div class="flex justify-between items-center">
                                 <div>
-                                    <p class="text-sm font-bold">強力瘦身</p>
-                                    <p class="text-[10px] text-gray-500">降低 DPI 與 JPEG 品質</p>
+                                    <p class="text-sm font-bold">強力瘦身（整頁轉圖片）</p>
+                                    <p class="text-[10px] text-orange-600 dark:text-orange-400">降低 DPI／JPEG 品質；會失去搜尋、連結及表單</p>
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" id="enableStrongCompressCb" class="sr-only peer">
-                                    <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
-                                </label>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="text-sm font-bold">整頁轉成圖片</p>
-                                    <p class="text-[10px] text-orange-600 dark:text-orange-400">會失去文字搜尋、連結及表單</p>
-                                </div>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="rasterizePagesCb" class="sr-only peer">
                                     <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                                 </label>
                             </div>
@@ -882,27 +872,16 @@
         };
 
         const enableStrongCompressCb = document.getElementById('enableStrongCompressCb');
-        const rasterizePagesCb = document.getElementById('rasterizePagesCb');
         const strongCompressControls = document.getElementById('strongCompressControls');
 
         enableStrongCompressCb.onchange = (e) => {
             strongCompressControls.classList.toggle('opacity-50', !e.target.checked);
             strongCompressControls.classList.toggle('pointer-events-none', !e.target.checked);
             if (e.target.checked) {
-                rasterizePagesCb.checked = true;
                 document.getElementById('enableCompressCb').checked = false;
-                document.getElementById('compressResult').textContent = '⚠️ 強力瘦身將整頁重新渲染，文字搜尋、連結及表單不會保留。';
-            }
-        };
-
-        rasterizePagesCb.onchange = (e) => {
-            if (e.target.checked) {
-                document.getElementById('enableCompressCb').checked = false;
-                document.getElementById('compressResult').textContent = '⚠️ 整頁轉圖已啟用，文字搜尋、連結及表單不會保留。';
-            } else if (enableStrongCompressCb.checked) {
-                enableStrongCompressCb.checked = false;
-                strongCompressControls.classList.add('opacity-50', 'pointer-events-none');
-                document.getElementById('compressResult').textContent = '整頁轉圖已關閉，因此強力瘦身也已關閉。';
+                document.getElementById('compressResult').textContent = '⚠️ 強力瘦身會將整頁轉成圖片，文字搜尋、連結及表單不會保留。';
+            } else {
+                document.getElementById('compressResult').textContent = '強力瘦身已關閉，不會將頁面轉成圖片。';
             }
         };
 
@@ -1054,20 +1033,15 @@
             let pdfBytes = uncompressedBytes;
             let compressionPrefix = '';
             const useStrongCompression = document.getElementById('enableStrongCompressCb').checked;
-            const rasterizePages = document.getElementById('rasterizePagesCb').checked;
 
-            if (rasterizePages) {
+            if (useStrongCompression) {
                 const renderSourceBytes = await exportPdf.save({
                     useObjectStreams: true,
                     addDefaultPage: false,
                     objectsPerTick: 50
                 });
-                const dpi = useStrongCompression
-                    ? parseInt(document.getElementById('strongCompressDpi').value, 10)
-                    : 150;
-                const jpegQuality = useStrongCompression
-                    ? parseFloat(document.getElementById('strongCompressQuality').value)
-                    : 0.85;
+                const dpi = parseInt(document.getElementById('strongCompressDpi').value, 10);
+                const jpegQuality = parseFloat(document.getElementById('strongCompressQuality').value);
                 const rasterizedBytes = await rasterizePdf(renderSourceBytes, dpi, jpegQuality);
                 const savedRatio = uncompressedBytes.length > 0
                     ? (uncompressedBytes.length - rasterizedBytes.length) / uncompressedBytes.length
@@ -1075,14 +1049,14 @@
                 const savedPercent = formatCompressionPercent(savedRatio);
 
                 if (savedRatio < MIN_COMPRESSION_RATIO) {
-                    document.getElementById('compressResult').innerHTML = `⛔ ${useStrongCompression ? '強力瘦身' : '整頁轉圖'}僅能縮小 ${savedPercent}%，未達 10%，因此未提供下載。`;
+                    document.getElementById('compressResult').innerHTML = `⛔ 強力瘦身僅能縮小 ${savedPercent}%，未達 10%，因此未提供下載。`;
                     alert(`處理後僅縮小 ${savedPercent}%，未達 10% 門檻，因此不會下載檔案。`);
                     return;
                 }
 
                 pdfBytes = rasterizedBytes;
-                compressionPrefix = useStrongCompression ? 'Strong_' : 'Rasterized_';
-                document.getElementById('compressResult').innerHTML = `✅ ${useStrongCompression ? '強力瘦身' : '整頁轉圖'}完成：${formatBytes(uncompressedBytes.length)} → <strong>${formatBytes(pdfBytes.length)}</strong>，節省 ${savedPercent}%。`;
+                compressionPrefix = 'Strong_';
+                document.getElementById('compressResult').innerHTML = `✅ 強力瘦身完成：${formatBytes(uncompressedBytes.length)} → <strong>${formatBytes(pdfBytes.length)}</strong>，節省 ${savedPercent}%。`;
             } else if (document.getElementById('enableCompressCb').checked) {
                 const optimizedBytes = await exportPdf.save({
                     useObjectStreams: true,
