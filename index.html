@@ -73,17 +73,70 @@
     </header>
 
     <main class="flex-grow max-w-5xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
+
+        <section id="introSection" class="space-y-6">
+            <div class="text-center py-6 sm:py-10">
+                <span class="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold mb-4">免安裝 · 不上傳 · 瀏覽器本機處理</span>
+                <h2 class="text-3xl sm:text-4xl font-black tracking-tight mb-3">先選擇需求，再開始處理 PDF</h2>
+                <p class="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">合併、分割、排序、編輯、加密、瘦身與轉 Excel 都集中在同一個工作區。上傳後仍可自由搭配功能。</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" aria-label="操作步驟">
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center gap-3">
+                    <span class="w-9 h-9 shrink-0 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">1</span>
+                    <div><p class="font-bold">選取 PDF</p><p class="text-xs text-gray-500">可一次選取多檔合併</p></div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center gap-3">
+                    <span class="w-9 h-9 shrink-0 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold">2</span>
+                    <div><p class="font-bold">編排與設定</p><p class="text-xs text-gray-500">拖曳頁面並開啟所需功能</p></div>
+                </div>
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center gap-3">
+                    <span class="w-9 h-9 shrink-0 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold">3</span>
+                    <div><p class="font-bold">預覽結果並匯出</p><p class="text-xs text-gray-500">瘦身不足 10% 不產生檔案</p></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-end justify-between gap-3 mb-3">
+                    <div><p class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">功能總覽</p><h3 class="text-xl font-bold">上傳前就能確認是否符合需求</h3></div>
+                    <span class="hidden sm:block text-xs text-gray-400">所有功能皆在載入 PDF 後設定</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <article class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+                        <div class="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-3">▦</div>
+                        <h4 class="font-bold mb-2">整理頁面</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed">多檔合併、選取頁面分割、拖曳排序、頁面旋轉。</p>
+                    </article>
+                    <article class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+                        <div class="w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 flex items-center justify-center mb-3">✎</div>
+                        <h4 class="font-bold mb-2">編輯與保護</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed">文字浮水印、簽名去背、立可白、加文字及密碼加密。</p>
+                    </article>
+                    <article class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+                        <div class="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">⇣</div>
+                        <h4 class="font-bold mb-2">PDF 瘦身</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed">無損最佳化，或調整 DPI、JPEG 品質進行強力瘦身。</p>
+                        <p class="mt-2 text-[10px] text-orange-600 dark:text-orange-400">強力模式可能失去搜尋、連結與表單。</p>
+                    </article>
+                    <article class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+                        <div class="w-9 h-9 rounded-lg bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 flex items-center justify-center mb-3">X</div>
+                        <h4 class="font-bold mb-2">轉為 Excel</h4>
+                        <p class="text-xs text-gray-500 leading-relaxed">依文字座標抽取內容，適合純文字與結構較簡單的表格。</p>
+                    </article>
+                </div>
+            </div>
+        </section>
         
-        <section id="uploadSection" class="w-full flex flex-col items-center justify-center p-16 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 hover:border-blue-500 dark:hover:border-blue-400 transition-all cursor-pointer text-center group relative overflow-hidden">
+        <section id="uploadSection" class="w-full flex flex-col items-center justify-center p-8 sm:p-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 hover:border-blue-500 dark:hover:border-blue-400 transition-all cursor-pointer text-center group relative overflow-hidden">
             <div id="loadingOverlay" class="hidden absolute inset-0 bg-white/80 dark:bg-gray-800/80 flex-col items-center justify-center z-10">
                 <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                <p class="font-medium">正在處理檔案...</p>
+                <p id="loadingStatusText" class="font-medium">正在讀取 PDF...</p>
             </div>
             
             <div class="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-full mb-4 group-hover:scale-110 transition-transform">
                 <svg class="w-10 h-10 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
             </div>
-            <h2 class="text-2xl font-bold mb-2">點擊選取或拖曳 PDF 檔案至此</h2>
+            <h2 class="text-2xl font-bold mb-2">開始處理：選取或拖曳 PDF</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">所有處理皆在您的設備上完成，檔案不會上傳至任何伺服器</p>
             <p class="text-xs text-blue-500 dark:text-blue-400 font-medium">💡 提示：同時選取多個檔案即可自動合併</p>
             <input type="file" id="pdfInput" class="hidden" accept="application/pdf" multiple>
@@ -115,6 +168,11 @@
                 </div>
             </div>
             
+            <div class="flex flex-wrap items-end justify-between gap-2">
+                <div><p class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">步驟 2</p><h2 class="text-xl font-bold">選擇需要套用的功能</h2></div>
+                <p class="text-xs text-gray-500">除符合門檻的無損瘦身外，其餘功能預設關閉</p>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                 
                 <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col gap-4">
@@ -204,13 +262,55 @@
                         </h3>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" id="enableCompressCb" class="sr-only peer" checked>
-                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600"></div>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600 peer-disabled:opacity-40 peer-disabled:cursor-not-allowed"></div>
                         </label>
                     </div>
                     <div class="flex flex-col gap-3">
                         <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">壓縮 PDF 內部物件與索引，不降低圖片畫質、不改變文字及頁面內容。只有縮小至少 10% 才會下載。</p>
                         <div id="compressResult" class="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-lg text-[11px] text-emerald-800 dark:text-emerald-300 leading-relaxed" aria-live="polite">
                             匯出時會檢查瘦身比例；未達 10% 不會產生下載檔案。
+                        </div>
+                        <div class="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-3">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-sm font-bold">強力瘦身</p>
+                                    <p class="text-[10px] text-gray-500">降低 DPI 與 JPEG 品質</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="enableStrongCompressCb" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-sm font-bold">整頁轉成圖片</p>
+                                    <p class="text-[10px] text-orange-600 dark:text-orange-400">會失去文字搜尋、連結及表單</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="rasterizePagesCb" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                                </label>
+                            </div>
+                            <div id="strongCompressControls" class="grid grid-cols-2 gap-2 opacity-50 pointer-events-none transition-opacity">
+                                <div>
+                                    <label class="block text-[10px] text-gray-500 mb-1">輸出 DPI</label>
+                                    <select id="strongCompressDpi" class="w-full px-2 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900">
+                                        <option value="150">150 DPI</option>
+                                        <option value="120" selected>120 DPI</option>
+                                        <option value="96">96 DPI</option>
+                                        <option value="72">72 DPI</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-gray-500 mb-1">JPEG 品質</label>
+                                    <select id="strongCompressQuality" class="w-full px-2 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900">
+                                        <option value="0.85">85%</option>
+                                        <option value="0.70" selected>70%</option>
+                                        <option value="0.55">55%</option>
+                                        <option value="0.40">40%</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -225,6 +325,10 @@
                 </div>
             </div>
 
+            <div class="flex flex-wrap items-end justify-between gap-2 mt-2">
+                <div><p class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">頁面管理</p><h2 class="text-xl font-bold">拖曳排序或勾選分割頁面</h2></div>
+                <p class="text-xs text-gray-500">滑鼠移到頁面可使用編輯與旋轉</p>
+            </div>
             <div id="thumbnailsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
             
         </section>
@@ -281,8 +385,10 @@
         let selectedPages = new Set(); 
         
         let pageEdits = {}; 
+        const MIN_COMPRESSION_RATIO = 0.10;
         
         const html = document.documentElement;
+        const introSection = document.getElementById('introSection');
         const uploadSection = document.getElementById('uploadSection');
         const workspaceSection = document.getElementById('workspaceSection');
         const pdfInput = document.getElementById('pdfInput');
@@ -297,6 +403,88 @@
             const unitIndex = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
             const value = bytes / Math.pow(1024, unitIndex);
             return `${value.toFixed(unitIndex === 0 ? 0 : 2)} ${units[unitIndex]}`;
+        }
+
+        function formatCompressionPercent(ratio) {
+            const percent = Math.max(0, ratio * 100);
+            return (Math.floor(percent * 100) / 100).toFixed(2);
+        }
+
+        async function checkCompressionEligibility(pdfDoc) {
+            const compressCheckbox = document.getElementById('enableCompressCb');
+            const compressResult = document.getElementById('compressResult');
+            document.getElementById('loadingStatusText').textContent = '正在評估無損瘦身效果...';
+
+            compressCheckbox.disabled = true;
+            compressResult.textContent = '正在預先檢查可瘦身比例...';
+
+            const uncompressedBytes = await pdfDoc.save({
+                useObjectStreams: false,
+                addDefaultPage: false,
+                objectsPerTick: 50
+            });
+            const optimizedBytes = await pdfDoc.save({
+                useObjectStreams: true,
+                addDefaultPage: false,
+                objectsPerTick: 50
+            });
+            const savedRatio = uncompressedBytes.length > 0
+                ? (uncompressedBytes.length - optimizedBytes.length) / uncompressedBytes.length
+                : 0;
+            const savedPercent = formatCompressionPercent(savedRatio);
+
+            if (savedRatio >= MIN_COMPRESSION_RATIO) {
+                compressCheckbox.disabled = false;
+                compressCheckbox.checked = true;
+                compressCheckbox.parentElement.title = `預估可無損瘦身 ${savedPercent}%`;
+                compressResult.innerHTML = `✅ 預估可無損瘦身 <strong>${savedPercent}%</strong>，匯出時將再次確認。`;
+            } else {
+                compressCheckbox.checked = false;
+                compressCheckbox.disabled = true;
+                compressCheckbox.parentElement.title = `僅能瘦身 ${savedPercent}%，未達 10%`;
+                compressResult.innerHTML = `⛔ 預估僅能瘦身 <strong>${savedPercent}%</strong>，未達 10%，功能已自動關閉。`;
+            }
+        }
+
+        async function rasterizePdf(pdfBytes, dpi, jpegQuality) {
+            const sourcePdf = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
+            const rasterPdf = await PDFLib.PDFDocument.create();
+            const MAX_CANVAS_PIXELS = 24000000;
+
+            for (let pageNumber = 1; pageNumber <= sourcePdf.numPages; pageNumber++) {
+                const sourcePage = await sourcePdf.getPage(pageNumber);
+                const pageViewport = sourcePage.getViewport({ scale: 1 });
+                let renderScale = dpi / 72;
+                const estimatedPixels = pageViewport.width * renderScale * pageViewport.height * renderScale;
+                if (estimatedPixels > MAX_CANVAS_PIXELS) {
+                    renderScale *= Math.sqrt(MAX_CANVAS_PIXELS / estimatedPixels);
+                }
+
+                const renderViewport = sourcePage.getViewport({ scale: renderScale });
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.max(1, Math.round(renderViewport.width));
+                canvas.height = Math.max(1, Math.round(renderViewport.height));
+                const context = canvas.getContext('2d', { alpha: false });
+                context.fillStyle = '#ffffff';
+                context.fillRect(0, 0, canvas.width, canvas.height);
+                await sourcePage.render({ canvasContext: context, viewport: renderViewport }).promise;
+
+                const jpgImage = await rasterPdf.embedJpg(canvas.toDataURL('image/jpeg', jpegQuality));
+                const outputPage = rasterPdf.addPage([pageViewport.width, pageViewport.height]);
+                outputPage.drawImage(jpgImage, {
+                    x: 0,
+                    y: 0,
+                    width: pageViewport.width,
+                    height: pageViewport.height
+                });
+
+                canvas.width = 1;
+                canvas.height = 1;
+                sourcePage.cleanup();
+            }
+
+            await sourcePdf.destroy();
+            return rasterPdf.save({ useObjectStreams: true, addDefaultPage: false, objectsPerTick: 50 });
         }
         
         const editModal = document.getElementById('editModal');
@@ -534,6 +722,7 @@
         async function handleFilesSelected() {
             document.getElementById('loadingOverlay').classList.remove('hidden');
             document.getElementById('loadingOverlay').classList.add('flex');
+            document.getElementById('loadingStatusText').textContent = '正在讀取與整理 PDF...';
 
             try {
                 const mergedPdf = await PDFLib.PDFDocument.create();
@@ -549,6 +738,7 @@
 
                 currentPdfDoc = mergedPdf;
                 currentPdfBytes = await mergedPdf.save();
+                await checkCompressionEligibility(currentPdfDoc);
                 
                 pageRotations = {};
                 selectedPages.clear();
@@ -556,9 +746,11 @@
 
                 document.getElementById('fileNameDisplay').textContent = outputFileName;
                 document.getElementById('pageCountDisplay').textContent = `共 ${currentPdfDoc.getPageCount()} 頁 · 原始 ${formatBytes(sourceFileSize)}`;
-                
+                 
+                document.getElementById('loadingStatusText').textContent = '正在建立頁面預覽...';
                 await renderThumbnails(currentPdfBytes);
 
+                introSection.classList.add('hidden');
                 uploadSection.classList.add('hidden');
                 workspaceSection.classList.remove('hidden');
                 workspaceSection.classList.add('flex');
@@ -687,6 +879,31 @@
         document.getElementById('enableEncryptCb').onchange = (e) => {
             document.getElementById('encryptControls').classList.toggle('opacity-50', !e.target.checked);
             document.getElementById('encryptControls').classList.toggle('pointer-events-none', !e.target.checked);
+        };
+
+        const enableStrongCompressCb = document.getElementById('enableStrongCompressCb');
+        const rasterizePagesCb = document.getElementById('rasterizePagesCb');
+        const strongCompressControls = document.getElementById('strongCompressControls');
+
+        enableStrongCompressCb.onchange = (e) => {
+            strongCompressControls.classList.toggle('opacity-50', !e.target.checked);
+            strongCompressControls.classList.toggle('pointer-events-none', !e.target.checked);
+            if (e.target.checked) {
+                rasterizePagesCb.checked = true;
+                document.getElementById('enableCompressCb').checked = false;
+                document.getElementById('compressResult').textContent = '⚠️ 強力瘦身將整頁重新渲染，文字搜尋、連結及表單不會保留。';
+            }
+        };
+
+        rasterizePagesCb.onchange = (e) => {
+            if (e.target.checked) {
+                document.getElementById('enableCompressCb').checked = false;
+                document.getElementById('compressResult').textContent = '⚠️ 整頁轉圖已啟用，文字搜尋、連結及表單不會保留。';
+            } else if (enableStrongCompressCb.checked) {
+                enableStrongCompressCb.checked = false;
+                strongCompressControls.classList.add('opacity-50', 'pointer-events-none');
+                document.getElementById('compressResult').textContent = '整頁轉圖已關閉，因此強力瘦身也已關閉。';
+            }
         };
 
         document.getElementById('sigUploadBtn').onclick = () => document.getElementById('sigInput').click();
@@ -835,10 +1052,38 @@
                 objectsPerTick: 50
             });
             let pdfBytes = uncompressedBytes;
-            let compressionApplied = false;
+            let compressionPrefix = '';
+            const useStrongCompression = document.getElementById('enableStrongCompressCb').checked;
+            const rasterizePages = document.getElementById('rasterizePagesCb').checked;
 
-            if (document.getElementById('enableCompressCb').checked) {
-                const MIN_COMPRESSION_RATIO = 0.10;
+            if (rasterizePages) {
+                const renderSourceBytes = await exportPdf.save({
+                    useObjectStreams: true,
+                    addDefaultPage: false,
+                    objectsPerTick: 50
+                });
+                const dpi = useStrongCompression
+                    ? parseInt(document.getElementById('strongCompressDpi').value, 10)
+                    : 150;
+                const jpegQuality = useStrongCompression
+                    ? parseFloat(document.getElementById('strongCompressQuality').value)
+                    : 0.85;
+                const rasterizedBytes = await rasterizePdf(renderSourceBytes, dpi, jpegQuality);
+                const savedRatio = uncompressedBytes.length > 0
+                    ? (uncompressedBytes.length - rasterizedBytes.length) / uncompressedBytes.length
+                    : 0;
+                const savedPercent = formatCompressionPercent(savedRatio);
+
+                if (savedRatio < MIN_COMPRESSION_RATIO) {
+                    document.getElementById('compressResult').innerHTML = `⛔ ${useStrongCompression ? '強力瘦身' : '整頁轉圖'}僅能縮小 ${savedPercent}%，未達 10%，因此未提供下載。`;
+                    alert(`處理後僅縮小 ${savedPercent}%，未達 10% 門檻，因此不會下載檔案。`);
+                    return;
+                }
+
+                pdfBytes = rasterizedBytes;
+                compressionPrefix = useStrongCompression ? 'Strong_' : 'Rasterized_';
+                document.getElementById('compressResult').innerHTML = `✅ ${useStrongCompression ? '強力瘦身' : '整頁轉圖'}完成：${formatBytes(uncompressedBytes.length)} → <strong>${formatBytes(pdfBytes.length)}</strong>，節省 ${savedPercent}%。`;
+            } else if (document.getElementById('enableCompressCb').checked) {
                 const optimizedBytes = await exportPdf.save({
                     useObjectStreams: true,
                     addDefaultPage: false,
@@ -846,22 +1091,21 @@
                 });
                 const savedBytes = uncompressedBytes.length - optimizedBytes.length;
                 const savedRatio = uncompressedBytes.length > 0 ? savedBytes / uncompressedBytes.length : 0;
-                const savedPercent = Math.max(0, savedRatio * 100);
+                const savedPercent = formatCompressionPercent(savedRatio);
 
                 if (savedRatio < MIN_COMPRESSION_RATIO) {
-                    document.getElementById('compressResult').innerHTML = `⛔ 僅能縮小 ${savedPercent.toFixed(1)}%，未達 10% 門檻，因此未提供下載。`;
-                    alert(`此 PDF 無損瘦身幅度僅 ${savedPercent.toFixed(1)}%，未達 10% 門檻，因此不會下載檔案。`);
+                    document.getElementById('compressResult').innerHTML = `⛔ 僅能縮小 ${savedPercent}%，未達 10% 門檻，因此未提供下載。`;
+                    alert(`此 PDF 無損瘦身幅度僅 ${savedPercent}%，未達 10% 門檻，因此不會下載檔案。`);
                     return;
                 }
 
                 pdfBytes = optimizedBytes;
-                compressionApplied = true;
-                document.getElementById('compressResult').innerHTML = `✅ 無損瘦身完成：${formatBytes(uncompressedBytes.length)} → <strong>${formatBytes(pdfBytes.length)}</strong>，節省 ${savedPercent.toFixed(1)}%。`;
+                compressionPrefix = 'Compressed_';
+                document.getElementById('compressResult').innerHTML = `✅ 無損瘦身完成：${formatBytes(uncompressedBytes.length)} → <strong>${formatBytes(pdfBytes.length)}</strong>，節省 ${savedPercent}%。`;
             } else {
                 document.getElementById('compressResult').textContent = '無損瘦身未啟用。';
             }
 
-            const compressionPrefix = compressionApplied ? 'Compressed_' : '';
             const outputFileName = compressionPrefix + filenamePrefix + document.getElementById('fileNameDisplay').textContent;
 
             // ==========================================
