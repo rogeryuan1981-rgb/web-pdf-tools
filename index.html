@@ -208,9 +208,9 @@
                         </label>
                     </div>
                     <div class="flex flex-col gap-3">
-                        <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">壓縮 PDF 內部物件與索引，不降低圖片畫質、不改變文字及頁面內容。已最佳化的 PDF 可能無法再縮小。</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">壓縮 PDF 內部物件與索引，不降低圖片畫質、不改變文字及頁面內容。只有縮小至少 10% 才會下載。</p>
                         <div id="compressResult" class="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-lg text-[11px] text-emerald-800 dark:text-emerald-300 leading-relaxed" aria-live="polite">
-                            匯出時將自動選用較小的無損版本。
+                            匯出時會檢查瘦身比例；未達 10% 不會產生下載檔案。
                         </div>
                     </div>
                 </div>
@@ -838,21 +838,25 @@
             let compressionApplied = false;
 
             if (document.getElementById('enableCompressCb').checked) {
+                const MIN_COMPRESSION_RATIO = 0.10;
                 const optimizedBytes = await exportPdf.save({
                     useObjectStreams: true,
                     addDefaultPage: false,
                     objectsPerTick: 50
                 });
-                if (optimizedBytes.length < uncompressedBytes.length) {
-                    pdfBytes = optimizedBytes;
-                    compressionApplied = true;
+                const savedBytes = uncompressedBytes.length - optimizedBytes.length;
+                const savedRatio = uncompressedBytes.length > 0 ? savedBytes / uncompressedBytes.length : 0;
+                const savedPercent = Math.max(0, savedRatio * 100);
+
+                if (savedRatio < MIN_COMPRESSION_RATIO) {
+                    document.getElementById('compressResult').innerHTML = `⛔ 僅能縮小 ${savedPercent.toFixed(1)}%，未達 10% 門檻，因此未提供下載。`;
+                    alert(`此 PDF 無損瘦身幅度僅 ${savedPercent.toFixed(1)}%，未達 10% 門檻，因此不會下載檔案。`);
+                    return;
                 }
 
-                const savedBytes = uncompressedBytes.length - pdfBytes.length;
-                const savedPercent = uncompressedBytes.length > 0 ? (savedBytes / uncompressedBytes.length) * 100 : 0;
-                document.getElementById('compressResult').innerHTML = compressionApplied
-                    ? `✅ 無損最佳化完成：${formatBytes(uncompressedBytes.length)} → <strong>${formatBytes(pdfBytes.length)}</strong>，節省 ${savedPercent.toFixed(1)}%。`
-                    : `ℹ️ 此檔案已接近最佳狀態，已保留較小版本（${formatBytes(pdfBytes.length)}）。`;
+                pdfBytes = optimizedBytes;
+                compressionApplied = true;
+                document.getElementById('compressResult').innerHTML = `✅ 無損瘦身完成：${formatBytes(uncompressedBytes.length)} → <strong>${formatBytes(pdfBytes.length)}</strong>，節省 ${savedPercent.toFixed(1)}%。`;
             } else {
                 document.getElementById('compressResult').textContent = '無損瘦身未啟用。';
             }
