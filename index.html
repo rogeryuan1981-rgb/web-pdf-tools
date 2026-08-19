@@ -20,13 +20,13 @@
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="./styles.css">
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col transition-colors duration-200 font-sans">
+<body class="app-shell bg-gray-50 dark:bg-gray-950 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col transition-colors duration-200 font-sans">
 
-    <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
+    <header class="app-header sticky top-0 z-40">
         <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-xl font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                Web PDF Tools
+            <h1 class="brand-title text-xl font-black flex items-center gap-2.5 tracking-tight">
+                <span class="brand-mark"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></span>
+                Web PDF <span class="brand-accent">Tools</span>
             </h1>
             <button id="darkModeToggle" type="button" aria-label="切換深色模式" title="切換深色模式" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <span id="themeIcon">🌙</span>
@@ -38,8 +38,8 @@
 
         <section id="introSection" class="space-y-6">
             <div class="text-center py-6 sm:py-10">
-                <span class="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold mb-4">免安裝 · 不上傳 · 瀏覽器本機處理</span>
-                <h2 class="text-3xl sm:text-4xl font-black tracking-tight mb-3">先選擇需求，再開始處理 PDF</h2>
+                <span class="tech-badge inline-flex items-center px-3 py-1 rounded-full text-xs font-bold mb-4"><span class="status-dot"></span>LOCAL PROCESSING · ZERO UPLOAD</span>
+                <h2 class="hero-title text-3xl sm:text-5xl font-black tracking-tight mb-4">先選擇需求，再開始處理 PDF</h2>
                 <p class="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">合併、分割、排序、編輯、加密、瘦身與轉 Excel 都集中在同一個工作區。上傳後仍可自由搭配功能。</p>
             </div>
 
@@ -92,7 +92,7 @@
             </div>
         </section>
         
-        <section id="uploadSection" role="button" tabindex="0" aria-label="選取或拖曳 PDF 檔案" class="hidden w-full flex-col items-center justify-center p-8 sm:p-12 border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-xl bg-white dark:bg-gray-800 hover:border-blue-500 dark:hover:border-blue-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer text-center group relative overflow-hidden">
+        <section id="uploadSection" role="button" tabindex="0" aria-label="選取或拖曳 PDF 檔案" class="upload-zone hidden w-full flex-col items-center justify-center p-8 sm:p-14 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-all cursor-pointer text-center group relative overflow-hidden">
             <div id="loadingOverlay" aria-live="polite" aria-busy="true" class="hidden absolute inset-0 bg-white/80 dark:bg-gray-800/80 flex-col items-center justify-center z-10">
                 <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
                 <p id="loadingStatusText" class="font-medium">正在讀取 PDF...</p>
@@ -109,7 +109,7 @@
         </section>
 
         <section id="workspaceSection" class="hidden flex-col gap-6">
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl flex flex-wrap gap-4 justify-between items-center shadow-sm sticky top-20 z-20">
+            <div class="workspace-bar p-4 rounded-2xl flex flex-wrap gap-4 justify-between items-center sticky top-20 z-20">
                 <div class="flex items-center gap-3">
                     <svg class="w-8 h-8 text-red-500" viewBox="0 0 24 24" fill="currentColor"><path d="M8.267 14.68c-.184 0-.308.018-.372.036v1.178c.076.018.171.023.302.023.479 0 .774-.242.774-.651 0-.366-.254-.586-.704-.586zm3.487.012c-.2 0-.33.018-.407.036v2.61c.077.018.201.018.313.018.817.0 1.349-.44 1.349-1.396.002-.772-.423-1.268-1.255-1.268z"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM9.498 16.19c-.309.29-.765.42-1.296.42a2.23 2.23 0 0 1-.308-.018v1.426H6.75v-3.936A7.558 7.558 0 0 1 8.21 14c.557 0 .935.128 1.165.34.205.193.307.458.307.773 0 .386-.061.806-.184 1.077zm4.32 1.436c-.361.344-.924.468-1.554.468a3.13 3.13 0 0 1-.365-.018v-3.947a5.525 5.525 0 0 1 .425-.018c.676 0 1.222.138 1.552.477.348.353.535.83.535 1.506 0 .666-.192 1.171-.593 1.532zm2.934-.515h-1.611v1.408h-1.142v-3.92h2.894v.86h-1.752v.677h1.611v.975z"/></svg>
                     <div>
