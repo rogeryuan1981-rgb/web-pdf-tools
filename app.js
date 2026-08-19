@@ -7,6 +7,12 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
         let selectedPages = new Set(); 
         let isLoadingPdf = false;
         let activeTool = 'organize';
+        let fullWorkspaceMode = false;
+        let losslessEstimatedRatio = 0;
+        let losslessEstimatedBytes = 0;
+        let documentHasTextLayer = false;
+        let activeOperation = null;
+        let activeOcrWorker = null;
         
         let pageEdits = {}; 
         const MIN_COMPRESSION_RATIO = 0.10;
@@ -74,6 +80,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
         document.querySelectorAll('[data-select-tool]').forEach(button => {
             button.addEventListener('click', () => {
                 const requestedTool = button.dataset.selectTool;
+                fullWorkspaceMode = requestedTool === 'all';
                 activeTool = requestedTool === 'all' ? 'organize' : requestedTool;
                 document.getElementById('uploadToolTitle').textContent = TOOL_META[activeTool].upload;
                 introSection.classList.add('hidden');
@@ -95,6 +102,58 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
         document.querySelectorAll('[data-workspace-tool]').forEach(button => {
             button.addEventListener('click', () => setWorkspaceTool(button.dataset.workspaceTool));
         });
+
+        let exportConfirmResolver = null;
+
+        function requestExportConfirmation(pageCount) {
+            if (!fullWorkspaceMode) return Promise.resolve(true);
+            const features = [];
+            if (document.getElementById('enableWmCb').checked) features.push('文字浮水印');
+            if (document.getElementById('enableSigCb').checked) features.push('簽名疊加');
+            if (document.getElementById('enableCompressCb').checked) features.push('無損瘦身');
+            if (document.getElementById('enableStrongCompressCb').checked) features.push(`強力瘦身至 ${document.getElementById('targetSizeMb').value || '?'} MB`);
+            if (document.getElementById('enableEncryptCb').checked) features.push('密碼加密');
+            if (Object.values(pageRotations).some(angle => angle)) features.push('頁面旋轉');
+            if (Object.values(pageEdits).some(edits => edits?.length)) features.push('單頁內容覆蓋');
+
+            const rows = [
+                ['來源檔案', document.getElementById('fileNameDisplay').textContent],
+                ['輸出頁數', `${pageCount} 頁`],
+                ['套用功能', features.length ? features.join('、') : '僅輸出目前頁面與順序'],
+                ['注意事項', document.getElementById('enableStrongCompressCb').checked ? '強力瘦身會失去文字搜尋、連結及表單。' : '保留目前 PDF 頁面內容。']
+            ];
+            const summary = document.getElementById('exportConfirmSummary');
+            summary.innerHTML = '';
+            rows.forEach(([label, value]) => {
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-[6rem_1fr] gap-3 py-2 border-b border-gray-100 dark:border-gray-800 last:border-0';
+                const labelElement = document.createElement('span');
+                labelElement.className = 'text-gray-500';
+                labelElement.textContent = label;
+                const valueElement = document.createElement('span');
+                valueElement.className = 'font-medium break-words';
+                valueElement.textContent = value;
+                row.append(labelElement, valueElement);
+                summary.appendChild(row);
+            });
+
+            const modal = document.getElementById('exportConfirmModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('confirmExportBtn').focus();
+            return new Promise(resolve => { exportConfirmResolver = resolve; });
+        }
+
+        function closeExportConfirmation(result) {
+            const modal = document.getElementById('exportConfirmModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            exportConfirmResolver?.(result);
+            exportConfirmResolver = null;
+        }
+
+        document.getElementById('confirmExportBtn').addEventListener('click', () => closeExportConfirmation(true));
+        document.getElementById('cancelExportConfirmBtn').addEventListener('click', () => closeExportConfirmation(false));
 
         function formatBytes(bytes) {
             if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
@@ -126,6 +185,48 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             setTimeout(() => toast.remove(), 7000);
         }
 
+        class OperationCancelledError extends Error {
+            constructor() {
+                super('Operation cancelled');
+                this.name = 'OperationCancelledError';
+            }
+        }
+
+        function startOperation(title) {
+            activeOperation = { cancelled: false };
+            document.getElementById('operationProgressPanel').classList.remove('hidden');
+            document.getElementById('operationProgressTitle').textContent = title;
+            updateOperationProgress(0, '準備中...');
+            return activeOperation;
+        }
+
+        function updateOperationProgress(percent, detail) {
+            const safePercent = Math.min(100, Math.max(0, Number(percent) || 0));
+            document.getElementById('operationProgressBar').style.width = `${safePercent}%`;
+            document.getElementById('operationProgressDetail').textContent = `${detail} · ${Math.round(safePercent)}%`;
+        }
+
+        function finishOperation() {
+            document.getElementById('operationProgressPanel').classList.add('hidden');
+            document.getElementById('operationProgressBar').style.width = '0%';
+            activeOperation = null;
+        }
+
+        function ensureOperationNotCancelled(operation = activeOperation) {
+            if (operation?.cancelled) throw new OperationCancelledError();
+        }
+
+        document.getElementById('cancelOperationBtn').addEventListener('click', () => {
+            if (activeOperation) {
+                activeOperation.cancelled = true;
+                document.getElementById('operationProgressDetail').textContent = '正在取消，請稍候...';
+                if (activeOcrWorker) {
+                    activeOcrWorker.terminate().catch(() => {});
+                    activeOcrWorker = null;
+                }
+            }
+        });
+
         function formatCompressionPercent(ratio) {
             const percent = Math.max(0, ratio * 100);
             return (Math.floor(percent * 100) / 100).toFixed(2);
@@ -152,6 +253,8 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             const savedRatio = uncompressedBytes.length > 0
                 ? (uncompressedBytes.length - optimizedBytes.length) / uncompressedBytes.length
                 : 0;
+            losslessEstimatedRatio = savedRatio;
+            losslessEstimatedBytes = optimizedBytes.length;
             const savedPercent = formatCompressionPercent(savedRatio);
 
             if (savedRatio >= MIN_COMPRESSION_RATIO) {
@@ -167,12 +270,140 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             }
         }
 
-        async function rasterizePdf(pdfBytes, dpi, jpegQuality) {
+        async function analyzeDocumentCharacteristics(pdfBytes) {
+            const pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
+            let extractedCharacters = 0;
+            const sampleCount = Math.min(pdf.numPages, 3);
+            for (let pageNumber = 1; pageNumber <= sampleCount; pageNumber++) {
+                const page = await pdf.getPage(pageNumber);
+                const textContent = await page.getTextContent();
+                extractedCharacters += textContent.items.reduce((total, item) => total + (item.str || '').trim().length, 0);
+                page.cleanup();
+            }
+            documentHasTextLayer = extractedCharacters >= 20;
+            await pdf.destroy();
+        }
+
+        function getRecommendedStrongProfile(targetRatio) {
+            if (targetRatio >= 0.70) return { dpi: 150, quality: 0.85 };
+            if (targetRatio >= 0.45) return { dpi: 120, quality: 0.75 };
+            if (targetRatio >= 0.25) return { dpi: 96, quality: 0.65 };
+            return { dpi: 72, quality: 0.50 };
+        }
+
+        function updateCompressionRecommendation(applyMode = true) {
+            if (!sourceFileSize) return;
+            const targetMb = parseFloat(document.getElementById('targetSizeMb').value);
+            const recommendation = document.getElementById('compressRecommendation');
+            if (!Number.isFinite(targetMb) || targetMb <= 0) {
+                recommendation.textContent = '請先輸入有效的目標檔案大小。';
+                return;
+            }
+
+            const targetBytes = targetMb * 1024 * 1024;
+            const targetRatio = targetBytes / sourceFileSize;
+            const canUseLossless = losslessEstimatedRatio >= MIN_COMPRESSION_RATIO && losslessEstimatedBytes <= targetBytes;
+            const textNote = documentHasTextLayer ? '此 PDF 含有可搜尋文字。' : '此 PDF 主要看起來是掃描圖片。';
+
+            if (targetBytes >= sourceFileSize) {
+                recommendation.innerHTML = `ℹ️ 目標 ${formatBytes(targetBytes)} 不小於目前檔案 ${formatBytes(sourceFileSize)}，不需要進行瘦身。`;
+                return;
+            }
+
+            if (canUseLossless) {
+                recommendation.innerHTML = `✅ <strong>建議無損瘦身</strong>：預估可達 ${formatBytes(losslessEstimatedBytes)}，且保留文字、連結與畫質。${textNote}`;
+                if (applyMode) {
+                    enableCompressCb.checked = true;
+                    enableStrongCompressCb.checked = false;
+                    strongCompressControls.classList.add('opacity-50', 'pointer-events-none');
+                }
+            } else {
+                const profile = getRecommendedStrongProfile(targetRatio);
+                recommendation.innerHTML = `⚡ <strong>建議強力瘦身</strong>：無損模式無法達到 ${formatBytes(targetBytes)}。${textNote} 將整頁轉成圖片，請先確認畫質預覽。`;
+                document.getElementById('strongCompressDpi').value = String(profile.dpi);
+                document.getElementById('strongCompressQuality').value = String(profile.quality);
+                if (applyMode) {
+                    enableCompressCb.checked = false;
+                    enableStrongCompressCb.checked = true;
+                    strongCompressControls.classList.remove('opacity-50', 'pointer-events-none');
+                }
+            }
+        }
+
+        function populateCompressionPreviewPages(pageCount) {
+            const select = document.getElementById('compressionPreviewPage');
+            select.innerHTML = '';
+            for (let index = 0; index < pageCount; index++) {
+                const option = document.createElement('option');
+                option.value = String(index);
+                option.textContent = `第 ${index + 1} 頁`;
+                select.appendChild(option);
+            }
+        }
+
+        async function generateCompressionPreview() {
+            if (!currentPdfBytes) return;
+            const button = document.getElementById('generateCompressionPreviewBtn');
+            const originalLabel = button.textContent;
+            button.disabled = true;
+            button.textContent = '產生中...';
+            try {
+                const pageIndex = parseInt(document.getElementById('compressionPreviewPage').value, 10) || 0;
+                const dpi = parseInt(document.getElementById('strongCompressDpi').value, 10) || 120;
+                const quality = parseFloat(document.getElementById('strongCompressQuality').value) || 0.75;
+                const pdf = await pdfjsLib.getDocument({ data: currentPdfBytes.slice(0) }).promise;
+                const page = await pdf.getPage(pageIndex + 1);
+                const baseViewport = page.getViewport({ scale: 1 });
+                const displayScale = Math.min(1.2, 640 / baseViewport.width);
+                const displayViewport = page.getViewport({ scale: displayScale });
+
+                const originalCanvas = document.getElementById('originalCompressionPreview');
+                originalCanvas.width = Math.round(displayViewport.width);
+                originalCanvas.height = Math.round(displayViewport.height);
+                await page.render({ canvasContext: originalCanvas.getContext('2d'), viewport: displayViewport }).promise;
+
+                const renderViewport = page.getViewport({ scale: dpi / 72 });
+                const sourceCanvas = document.createElement('canvas');
+                sourceCanvas.width = Math.round(renderViewport.width);
+                sourceCanvas.height = Math.round(renderViewport.height);
+                const sourceContext = sourceCanvas.getContext('2d', { alpha: false });
+                sourceContext.fillStyle = '#fff';
+                sourceContext.fillRect(0, 0, sourceCanvas.width, sourceCanvas.height);
+                await page.render({ canvasContext: sourceContext, viewport: renderViewport }).promise;
+
+                const imageBlob = await new Promise(resolve => sourceCanvas.toBlob(resolve, 'image/jpeg', quality));
+                if (!imageBlob) throw new Error('無法建立 JPEG 預覽');
+                const bitmap = await createImageBitmap(imageBlob);
+                const compressedCanvas = document.getElementById('compressedCompressionPreview');
+                compressedCanvas.width = originalCanvas.width;
+                compressedCanvas.height = originalCanvas.height;
+                compressedCanvas.getContext('2d').drawImage(bitmap, 0, 0, compressedCanvas.width, compressedCanvas.height);
+                bitmap.close();
+
+                document.getElementById('compressionPreviewArea').classList.remove('hidden');
+                document.getElementById('compressionPreviewInfo').textContent = `第 ${pageIndex + 1} 頁 · 建議設定 ${dpi} DPI／品質 ${Math.round(quality * 100)}% · 此預覽不會處理其他頁面。`;
+                sourceCanvas.width = 1;
+                sourceCanvas.height = 1;
+                page.cleanup();
+                await pdf.destroy();
+            } catch (error) {
+                console.error(error);
+                showToast('產生壓縮畫質預覽時發生錯誤。');
+            } finally {
+                button.disabled = false;
+                button.textContent = originalLabel;
+            }
+        }
+
+        document.getElementById('generateCompressionPreviewBtn').addEventListener('click', generateCompressionPreview);
+
+        async function rasterizePdf(pdfBytes, dpi, jpegQuality, options = {}) {
             const sourcePdf = await pdfjsLib.getDocument({ data: pdfBytes.slice(0) }).promise;
             const rasterPdf = await PDFLib.PDFDocument.create();
             const MAX_CANVAS_PIXELS = 24000000;
 
             for (let pageNumber = 1; pageNumber <= sourcePdf.numPages; pageNumber++) {
+                ensureOperationNotCancelled(options.operation);
                 const sourcePage = await sourcePdf.getPage(pageNumber);
                 const pageViewport = sourcePage.getViewport({ scale: 1 });
                 let renderScale = dpi / 72;
@@ -202,13 +433,15 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
                 canvas.width = 1;
                 canvas.height = 1;
                 sourcePage.cleanup();
+                options.onProgress?.(pageNumber / sourcePdf.numPages, pageNumber, sourcePdf.numPages);
             }
 
+            ensureOperationNotCancelled(options.operation);
             await sourcePdf.destroy();
             return rasterPdf.save({ useObjectStreams: true, addDefaultPage: false, objectsPerTick: 50 });
         }
 
-        async function compressPdfToTarget(pdfBytes, targetBytes, maxDpi, startingQuality) {
+        async function compressPdfToTarget(pdfBytes, targetBytes, maxDpi, startingQuality, operation) {
             const rawProfiles = [
                 [maxDpi, startingQuality],
                 [Math.min(maxDpi, 150), Math.min(startingQuality, 0.80)],
@@ -229,7 +462,14 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             for (let index = 0; index < profiles.length; index++) {
                 const [dpi, quality] = profiles[index];
                 document.getElementById('compressResult').textContent = `正在嘗試達到 ${formatBytes(targetBytes)}（第 ${index + 1}/${profiles.length} 階段）...`;
-                const bytes = await rasterizePdf(pdfBytes, dpi, quality);
+                ensureOperationNotCancelled(operation);
+                const bytes = await rasterizePdf(pdfBytes, dpi, quality, {
+                    operation,
+                    onProgress: (pageProgress, pageNumber, pageCount) => {
+                        const totalProgress = ((index + pageProgress) / profiles.length) * 100;
+                        updateOperationProgress(totalProgress, `壓縮階段 ${index + 1}/${profiles.length} · 第 ${pageNumber}/${pageCount} 頁`);
+                    }
+                });
                 const result = { bytes, dpi, quality, reached: bytes.length <= targetBytes };
                 if (!smallestResult || bytes.length < smallestResult.bytes.length) smallestResult = result;
                 if (result.reached) return result;
@@ -322,8 +562,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
         };
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !editModal.classList.contains('hidden')) {
-                document.getElementById('closeEditModalBtn').click();
+            if (e.key === 'Escape') {
+                if (!document.getElementById('exportConfirmModal').classList.contains('hidden')) closeExportConfirmation(false);
+                else if (!editModal.classList.contains('hidden')) document.getElementById('closeEditModalBtn').click();
             }
         });
 
@@ -540,6 +781,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
                 currentPdfDoc = mergedPdf;
                 currentPdfBytes = await mergedPdf.save();
                 await checkCompressionEligibility(currentPdfDoc);
+                await analyzeDocumentCharacteristics(currentPdfBytes);
+                populateCompressionPreviewPages(currentPdfDoc.getPageCount());
+                updateCompressionRecommendation(true);
                 
                 pageRotations = {};
                 selectedPages.clear();
@@ -691,6 +935,11 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             document.getElementById('encryptControls').classList.toggle('pointer-events-none', !e.target.checked);
         };
 
+        document.getElementById('enableOcrCb').onchange = (e) => {
+            document.getElementById('ocrControls').classList.toggle('opacity-50', !e.target.checked);
+            document.getElementById('ocrControls').classList.toggle('pointer-events-none', !e.target.checked);
+        };
+
         const enableStrongCompressCb = document.getElementById('enableStrongCompressCb');
         const enableCompressCb = document.getElementById('enableCompressCb');
         const strongCompressControls = document.getElementById('strongCompressControls');
@@ -698,8 +947,11 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
         document.querySelectorAll('.target-size-preset').forEach(button => {
             button.addEventListener('click', () => {
                 document.getElementById('targetSizeMb').value = button.dataset.targetMb;
+                updateCompressionRecommendation(true);
             });
         });
+
+        document.getElementById('targetSizeMb').addEventListener('input', () => updateCompressionRecommendation(true));
 
         enableStrongCompressCb.onchange = (e) => {
             strongCompressControls.classList.toggle('opacity-50', !e.target.checked);
@@ -896,12 +1148,15 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
                 });
                 const maxDpi = parseInt(document.getElementById('strongCompressDpi').value, 10);
                 const startingQuality = parseFloat(document.getElementById('strongCompressQuality').value);
+                const compressionOperation = startOperation('正在強力瘦身');
                 const compressionResult = await compressPdfToTarget(
                     renderSourceBytes,
                     compressionTargetBytes,
                     maxDpi,
-                    startingQuality
+                    startingQuality,
+                    compressionOperation
                 );
+                updateOperationProgress(100, '壓縮完成，正在建立檔案');
                 const rasterizedBytes = compressionResult.bytes;
                 const savedRatio = uncompressedBytes.length > 0
                     ? (uncompressedBytes.length - rasterizedBytes.length) / uncompressedBytes.length
@@ -993,17 +1248,20 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
         }
 
         downloadAllBtn.onclick = async () => {
+            const checkboxes = thumbnailsContainer.querySelectorAll('.page-checkbox');
+            if (!(await requestExportConfirmation(checkboxes.length))) return;
             downloadAllBtn.innerHTML = '<span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>處理中...';
             downloadAllBtn.disabled = true;
             downloadAllBtn.classList.add('opacity-60', 'cursor-wait');
             try {
-                const checkboxes = thumbnailsContainer.querySelectorAll('.page-checkbox');
                 const currentOrderIndices = Array.from(checkboxes).map(cb => parseInt(cb.value));
                 await exportProcessedPdf(currentOrderIndices, "Processed_");
             } catch (error) {
                 console.error(error);
-                showToast('匯出 PDF 時發生錯誤，請調低壓縮強度或減少頁數後再試。');
+                if (error instanceof OperationCancelledError) showToast('已取消處理。', 'info');
+                else showToast('匯出 PDF 時發生錯誤，請調低壓縮強度或減少頁數後再試。');
             } finally {
+                finishOperation();
                 downloadAllBtn.innerHTML = getPrimaryActionHTML(activeTool);
                 downloadAllBtn.disabled = false;
                 downloadAllBtn.classList.remove('opacity-60', 'cursor-wait');
@@ -1011,17 +1269,20 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
         };
 
         downloadSelectedBtn.onclick = async () => {
+            const checkedBoxes = thumbnailsContainer.querySelectorAll('.page-checkbox:checked');
+            if (!(await requestExportConfirmation(checkedBoxes.length))) return;
             downloadSelectedBtn.textContent = "處理中...";
             downloadSelectedBtn.disabled = true;
             downloadSelectedBtn.classList.add('opacity-60', 'cursor-wait');
             try {
-                const checkedBoxes = thumbnailsContainer.querySelectorAll('.page-checkbox:checked');
                 const selectedOrderIndices = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
                 await exportProcessedPdf(selectedOrderIndices, "Extracted_");
             } catch (error) {
                 console.error(error);
-                showToast('匯出選取頁面時發生錯誤。');
+                if (error instanceof OperationCancelledError) showToast('已取消處理。', 'info');
+                else showToast('匯出選取頁面時發生錯誤。');
             } finally {
+                finishOperation();
                 downloadSelectedBtn.textContent = `匯出選取的 ${selectedPages.size} 頁`;
                 downloadSelectedBtn.disabled = false;
                 downloadSelectedBtn.classList.remove('opacity-60', 'cursor-wait');
@@ -1033,77 +1294,118 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
         // ==========================================
         // PDF 轉 Excel 核心邏輯
         // ==========================================
+        function extractRowsFromTextItems(items) {
+            const rowMap = new Map();
+            const TOLERANCE = 4;
+            items.forEach(item => {
+                const x = item.transform[4];
+                const y = item.transform[5];
+                let rowY = null;
+                for (const key of rowMap.keys()) {
+                    if (Math.abs(key - y) < TOLERANCE) { rowY = key; break; }
+                }
+                if (rowY === null) {
+                    rowY = y;
+                    rowMap.set(rowY, []);
+                }
+                rowMap.get(rowY).push({ str: item.str, x });
+            });
+            return Array.from(rowMap.keys()).sort((a, b) => b - a).flatMap(y => {
+                const row = rowMap.get(y).sort((a, b) => a.x - b.x).map(item => item.str.trim()).filter(Boolean);
+                return row.length ? [row] : [];
+            });
+        }
+
+        function extractRowsFromOcrText(text) {
+            return text.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => {
+                const cells = line.split(/\t|\s{2,}/).map(cell => cell.trim()).filter(Boolean);
+                return cells.length ? cells : [line];
+            });
+        }
+
         pdfToExcelBtn.onclick = async () => {
             if (pdfInput.files.length === 0) return;
-            
             const btnOriginalHTML = pdfToExcelBtn.innerHTML;
-            pdfToExcelBtn.innerHTML = '<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> 處理中...';
+            pdfToExcelBtn.innerHTML = '<div class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div> 處理中...';
             pdfToExcelBtn.disabled = true;
+            const operation = startOperation('正在轉換 PDF 為 Excel');
+            const useOcr = document.getElementById('enableOcrCb').checked;
+            let currentOcrBase = 0;
+            let currentOcrSpan = 0;
 
             try {
+                const files = Array.from(pdfInput.files);
                 const workbook = XLSX.utils.book_new();
-
-                for (let fileIdx = 0; fileIdx < pdfInput.files.length; fileIdx++) {
-                    const file = pdfInput.files[fileIdx];
-                    const arrayBuffer = await file.arrayBuffer();
-                    
-                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                    let allRows = [];
-
-                    for (let i = 1; i <= pdf.numPages; i++) {
-                        const page = await pdf.getPage(i);
-                        const textContent = await page.getTextContent();
-                        const items = textContent.items;
-
-                        const rowMap = new Map();
-                        const TOLERANCE = 4;
-
-                        items.forEach(item => {
-                            const x = item.transform[4];
-                            const y = item.transform[5];
-
-                            let rowY = null;
-                            for (let key of rowMap.keys()) {
-                                if (Math.abs(key - y) < TOLERANCE) {
-                                    rowY = key;
-                                    break;
-                                }
+                if (useOcr) {
+                    if (!window.Tesseract) throw new Error('OCR 套件尚未載入');
+                    const languages = document.getElementById('ocrLanguage').value.split('+');
+                    activeOcrWorker = await Tesseract.createWorker(languages, 1, {
+                        logger: message => {
+                            if (message.status === 'recognizing text') {
+                                updateOperationProgress(currentOcrBase + message.progress * currentOcrSpan, '正在辨識掃描頁面文字');
                             }
-
-                            if (rowY === null) {
-                                rowY = y;
-                                rowMap.set(rowY, []);
-                            }
-                            rowMap.get(rowY).push({ str: item.str, x: x });
-                        });
-
-                        const sortedY = Array.from(rowMap.keys()).sort((a, b) => b - a);
-
-                        sortedY.forEach(y => {
-                            const rowItems = rowMap.get(y).sort((a, b) => a.x - b.x);
-                            const rowTextArray = rowItems.map(item => item.str.trim()).filter(str => str.length > 0);
-                            if (rowTextArray.length > 0) {
-                                allRows.push(rowTextArray);
-                            }
-                        });
-
-                        allRows.push([]);
-                    }
-
-                    let safeSheetName = file.name.replace(/\.[^/.]+$/, "").replace(/[\\/*?:\[\]]/g, "_").substring(0, 31);
-                    if (!safeSheetName) safeSheetName = "Sheet" + (fileIdx + 1);
-
-                    const worksheet = XLSX.utils.aoa_to_sheet(allRows);
-                    XLSX.utils.book_append_sheet(workbook, worksheet, safeSheetName);
+                        }
+                    });
                 }
 
-                XLSX.writeFile(workbook, "PDF_Export.xlsx");
-                showToast('Excel 檔案已建立完成。', 'success');
+                for (let fileIdx = 0; fileIdx < files.length; fileIdx++) {
+                    ensureOperationNotCancelled(operation);
+                    const file = files[fileIdx];
+                    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+                    const allRows = [];
 
+                    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+                        ensureOperationNotCancelled(operation);
+                        const page = await pdf.getPage(pageNumber);
+                        const textContent = await page.getTextContent();
+                        const readableCharacters = textContent.items.reduce((total, item) => total + (item.str || '').trim().length, 0);
+                        const pageBase = ((fileIdx + (pageNumber - 1) / pdf.numPages) / files.length) * 100;
+                        const pageSpan = (1 / pdf.numPages / files.length) * 100;
+
+                        if (readableCharacters >= 5) {
+                            allRows.push(...extractRowsFromTextItems(textContent.items));
+                            updateOperationProgress(pageBase + pageSpan, `讀取 ${file.name} · 第 ${pageNumber}/${pdf.numPages} 頁`);
+                        } else if (useOcr) {
+                            const viewport = page.getViewport({ scale: 2 });
+                            const canvas = document.createElement('canvas');
+                            canvas.width = Math.round(viewport.width);
+                            canvas.height = Math.round(viewport.height);
+                            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+                            currentOcrBase = pageBase;
+                            currentOcrSpan = pageSpan;
+                            const result = await activeOcrWorker.recognize(canvas);
+                            ensureOperationNotCancelled(operation);
+                            const ocrRows = extractRowsFromOcrText(result.data.text || '');
+                            allRows.push(...(ocrRows.length ? ocrRows : [['[OCR 未辨識到文字]']]));
+                            canvas.width = 1;
+                            canvas.height = 1;
+                        } else {
+                            allRows.push(['[此頁沒有可讀文字；可啟用 OCR 再試]']);
+                            updateOperationProgress(pageBase + pageSpan, `略過掃描頁面 · 第 ${pageNumber}/${pdf.numPages} 頁`);
+                        }
+                        allRows.push([]);
+                        page.cleanup();
+                    }
+                    await pdf.destroy();
+
+                    let safeSheetName = file.name.replace(/\.[^/.]+$/, '').replace(/[\\/*?:\[\]]/g, '_').substring(0, 31);
+                    if (!safeSheetName) safeSheetName = `Sheet${fileIdx + 1}`;
+                    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(allRows), safeSheetName);
+                }
+
+                updateOperationProgress(100, '正在建立 Excel 檔案');
+                XLSX.writeFile(workbook, 'PDF_Export.xlsx');
+                showToast('Excel 檔案已建立完成。', 'success');
             } catch (err) {
                 console.error(err);
-                showToast("轉換 Excel 發生錯誤，這可能是由於文件加密或格式不受支援。");
+                if (operation.cancelled || err instanceof OperationCancelledError) showToast('已取消 OCR／Excel 轉換。', 'info');
+                else showToast('轉換 Excel 發生錯誤。OCR 首次使用需保持網路連線，且加密或損毀的 PDF 可能無法處理。');
             } finally {
+                if (activeOcrWorker) {
+                    await activeOcrWorker.terminate().catch(() => {});
+                    activeOcrWorker = null;
+                }
+                finishOperation();
                 pdfToExcelBtn.innerHTML = btnOriginalHTML;
                 pdfToExcelBtn.disabled = false;
             }

@@ -18,6 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7/dist/tesseract.min.js"></script>
     <link rel="stylesheet" href="./styles.css">
 </head>
 <body class="app-shell bg-gray-50 dark:bg-gray-950 text-gray-800 dark:text-gray-200 min-h-screen flex flex-col transition-colors duration-200 font-sans">
@@ -142,6 +143,14 @@
                 <button type="button" data-workspace-tool="encrypt" class="workspace-tool-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium border transition-colors">密碼加密</button>
                 <button type="button" data-workspace-tool="excel" class="workspace-tool-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium border transition-colors">轉為 Excel</button>
             </nav>
+
+            <div id="operationProgressPanel" class="hidden workspace-bar rounded-xl p-4" aria-live="polite">
+                <div class="flex items-center justify-between gap-4 mb-2">
+                    <div class="min-w-0"><p id="operationProgressTitle" class="text-sm font-bold truncate">正在處理...</p><p id="operationProgressDetail" class="text-xs text-gray-500 truncate">準備中</p></div>
+                    <button type="button" id="cancelOperationBtn" class="shrink-0 px-3 py-1.5 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950/30 text-xs font-bold">取消</button>
+                </div>
+                <div class="h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"><div id="operationProgressBar" class="h-full rounded-full bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-600 transition-[width] duration-200" style="width:0%"></div></div>
+            </div>
              
             <div class="flex flex-wrap items-end justify-between gap-2">
                 <div><p class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">目前工具</p><h2 id="workspaceToolTitle" class="text-xl font-bold">整理頁面</h2></div>
@@ -152,8 +161,23 @@
                 <div class="max-w-2xl">
                     <div class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 flex items-center justify-center font-black text-xl mb-4">X</div>
                     <h3 class="text-xl font-bold mb-2">將 PDF 文字整理成 Excel</h3>
-                    <p class="text-sm text-gray-500 leading-relaxed">適合文字型 PDF 與結構簡單的表格。掃描圖片不會進行 OCR；複雜格線、合併儲存格及版面不保證完整還原。</p>
+                    <p class="text-sm text-gray-500 leading-relaxed">適合文字型 PDF 與結構簡單的表格；掃描圖片可選擇使用 OCR。複雜格線、合併儲存格及版面不保證完整還原。</p>
                     <p class="mt-3 text-xs text-green-700 dark:text-green-400">每份來源 PDF 會建立一個獨立工作表。</p>
+                    <div class="mt-5 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+                        <div class="flex items-center justify-between gap-4">
+                            <div><p class="text-sm font-bold">掃描文件 OCR</p><p class="text-xs text-gray-500">僅在頁面沒有可讀文字時啟用辨識。</p></div>
+                            <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="enableOcrCb" aria-label="啟用掃描文件 OCR" class="sr-only peer"><div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div></label>
+                        </div>
+                        <div id="ocrControls" class="opacity-50 pointer-events-none transition-opacity">
+                            <label class="block text-xs text-gray-500 mb-1">辨識語言</label>
+                            <select id="ocrLanguage" class="w-full sm:w-72 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900">
+                                <option value="chi_tra+eng" selected>繁體中文＋英文</option>
+                                <option value="chi_tra">繁體中文</option>
+                                <option value="eng">英文</option>
+                            </select>
+                            <p class="mt-2 text-[11px] text-amber-700 dark:text-amber-400">首次使用需下載 OCR 語言資料，處理速度及正確率取決於掃描品質。</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -256,6 +280,7 @@
                             <div id="compressResult" class="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-lg text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed" aria-live="polite">
                                 匯出時會檢查瘦身比例；未達 10% 不會產生下載檔案。
                             </div>
+                            <div id="compressRecommendation" class="p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 text-xs text-blue-800 dark:text-blue-300 leading-relaxed">輸入目標大小後，系統會自動推薦適合的瘦身方式。</div>
                         </div>
                         <div class="pt-4 lg:pt-0 lg:pl-5 border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-gray-700 space-y-3">
                             <div class="flex justify-between items-center">
@@ -286,6 +311,17 @@
                                     <button type="button" data-target-mb="10" class="target-size-preset px-2 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:border-orange-500 hover:text-orange-600">10 MB</button>
                                 </div>
                                 <p class="text-[10px] text-gray-500 leading-relaxed">系統會從較清晰的設定開始逐步壓縮，達到目標後立即停止。</p>
+                                <div class="rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-3">
+                                    <div class="flex flex-wrap items-end gap-2 justify-between">
+                                        <label><span class="block text-[10px] text-gray-500 mb-1">預覽頁面</span><select id="compressionPreviewPage" class="px-3 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900"><option value="0">第 1 頁</option></select></label>
+                                        <button type="button" id="generateCompressionPreviewBtn" class="px-3 py-2 text-xs font-bold rounded-lg bg-orange-600 hover:bg-orange-700 text-white">產生畫質預覽</button>
+                                    </div>
+                                    <div id="compressionPreviewArea" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <figure><figcaption class="text-[10px] font-bold text-gray-500 mb-1">原始頁面</figcaption><div class="preview-canvas-wrap"><canvas id="originalCompressionPreview"></canvas></div></figure>
+                                        <figure><figcaption class="text-[10px] font-bold text-gray-500 mb-1">預估壓縮畫質</figcaption><div class="preview-canvas-wrap"><canvas id="compressedCompressionPreview"></canvas></div></figure>
+                                    </div>
+                                    <p id="compressionPreviewInfo" class="text-[10px] text-gray-500">自行選擇一頁產生對照，不會處理整份 PDF。</p>
+                                </div>
                                 <details class="rounded-lg border border-gray-200 dark:border-gray-700 p-2">
                                     <summary class="text-xs font-medium cursor-pointer select-none">進階設定（一般使用者不需調整）</summary>
                                     <div class="grid grid-cols-2 gap-2 mt-3">
@@ -296,6 +332,7 @@
                                                 <option value="150" selected>150 DPI</option>
                                                 <option value="120">120 DPI</option>
                                                 <option value="96">96 DPI</option>
+                                                <option value="72">72 DPI</option>
                                             </select>
                                         </div>
                                         <div>
@@ -305,6 +342,7 @@
                                                 <option value="0.85" selected>85%</option>
                                                 <option value="0.75">75%</option>
                                                 <option value="0.65">65%</option>
+                                                <option value="0.50">50%</option>
                                             </select>
                                         </div>
                                     </div>
@@ -335,6 +373,20 @@
              
         </section>
     </main>
+
+    <div id="exportConfirmModal" role="dialog" aria-modal="true" aria-labelledby="exportConfirmTitle" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
+        <div class="w-full max-w-lg rounded-2xl border border-white/10 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden">
+            <div class="p-5 border-b border-gray-200 dark:border-gray-700"><p class="text-xs font-bold text-blue-600 dark:text-cyan-400 uppercase tracking-wider">完整工作區</p><h2 id="exportConfirmTitle" class="text-xl font-black mt-1">確認本次輸出內容</h2></div>
+            <div class="p-5 space-y-4">
+                <div id="exportConfirmSummary" class="space-y-2 text-sm"></div>
+                <div class="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 text-xs text-amber-800 dark:text-amber-300">確認後才會開始處理；強力瘦身或 OCR 可能需要較長時間。</div>
+            </div>
+            <div class="p-4 bg-gray-50 dark:bg-slate-950/40 flex justify-end gap-2">
+                <button type="button" id="cancelExportConfirmBtn" class="px-4 py-2 rounded-lg text-sm font-bold border border-gray-300 dark:border-gray-600">返回修改</button>
+                <button type="button" id="confirmExportBtn" class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-violet-600">確認並開始處理</button>
+            </div>
+        </div>
+    </div>
 
     <div id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" class="fixed inset-0 z-50 hidden bg-gray-900/90 flex-col backdrop-blur-sm">
         <div class="bg-white dark:bg-gray-800 shadow-md p-4 flex flex-wrap justify-between items-center z-10 border-b border-gray-200 dark:border-gray-700">
