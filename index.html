@@ -115,7 +115,7 @@
                     <article class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
                         <div class="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">⇣</div>
                         <h4 class="font-bold mb-2">PDF 瘦身</h4>
-                        <p class="text-xs text-gray-500 leading-relaxed">無損最佳化，或調整 DPI、JPEG 品質進行強力瘦身。</p>
+                        <p class="text-xs text-gray-500 leading-relaxed">無損最佳化，或直接設定希望壓到幾 MB，由系統自動調整。</p>
                         <p class="mt-2 text-[10px] text-orange-600 dark:text-orange-400">強力模式可能失去搜尋、連結與表單。</p>
                     </article>
                     <article class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
@@ -281,25 +281,48 @@
                                     <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                                 </label>
                             </div>
-                            <div id="strongCompressControls" class="grid grid-cols-2 gap-2 opacity-50 pointer-events-none transition-opacity">
-                                <div>
-                                    <label class="block text-[10px] text-gray-500 mb-1">輸出 DPI</label>
-                                    <select id="strongCompressDpi" class="w-full px-2 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900">
-                                        <option value="150">150 DPI</option>
-                                        <option value="120" selected>120 DPI</option>
-                                        <option value="96">96 DPI</option>
-                                        <option value="72">72 DPI</option>
-                                    </select>
+                            <div id="strongCompressControls" class="space-y-3 opacity-50 pointer-events-none transition-opacity">
+                                <div class="rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900 p-3">
+                                    <div class="flex items-end gap-2">
+                                        <label class="flex-grow">
+                                            <span class="block text-xs font-bold text-orange-900 dark:text-orange-200 mb-1">希望檔案不超過</span>
+                                            <input type="number" id="targetSizeMb" min="0.1" step="0.1" placeholder="例如 5" class="w-full px-3 py-2 border border-orange-300 dark:border-orange-800 rounded-lg bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                        </label>
+                                        <span class="pb-2 text-sm font-bold text-orange-800 dark:text-orange-300">MB</span>
+                                    </div>
+                                    <p id="strongSourceSize" class="mt-2 text-[10px] text-orange-700 dark:text-orange-400">載入後會顯示原始檔案大小並帶入建議值。</p>
                                 </div>
-                                <div>
-                                    <label class="block text-[10px] text-gray-500 mb-1">JPEG 品質</label>
-                                    <select id="strongCompressQuality" class="w-full px-2 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900">
-                                        <option value="0.85">85%</option>
-                                        <option value="0.70" selected>70%</option>
-                                        <option value="0.55">55%</option>
-                                        <option value="0.40">40%</option>
-                                    </select>
+                                <div class="grid grid-cols-4 gap-1.5" aria-label="常用目標大小">
+                                    <button type="button" data-target-mb="1" class="target-size-preset px-2 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:border-orange-500 hover:text-orange-600">1 MB</button>
+                                    <button type="button" data-target-mb="2" class="target-size-preset px-2 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:border-orange-500 hover:text-orange-600">2 MB</button>
+                                    <button type="button" data-target-mb="5" class="target-size-preset px-2 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:border-orange-500 hover:text-orange-600">5 MB</button>
+                                    <button type="button" data-target-mb="10" class="target-size-preset px-2 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 hover:border-orange-500 hover:text-orange-600">10 MB</button>
                                 </div>
+                                <p class="text-[10px] text-gray-500 leading-relaxed">系統會從較清晰的設定開始逐步壓縮，達到目標後立即停止。</p>
+                                <details class="rounded-lg border border-gray-200 dark:border-gray-700 p-2">
+                                    <summary class="text-xs font-medium cursor-pointer select-none">進階設定（一般使用者不需調整）</summary>
+                                    <div class="grid grid-cols-2 gap-2 mt-3">
+                                        <div>
+                                            <label class="block text-[10px] text-gray-500 mb-1">起始最高 DPI</label>
+                                            <select id="strongCompressDpi" class="w-full px-2 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900">
+                                                <option value="180">180 DPI</option>
+                                                <option value="150" selected>150 DPI</option>
+                                                <option value="120">120 DPI</option>
+                                                <option value="96">96 DPI</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] text-gray-500 mb-1">起始最高品質</label>
+                                            <select id="strongCompressQuality" class="w-full px-2 py-2 text-xs border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900">
+                                                <option value="0.90">90%</option>
+                                                <option value="0.85" selected>85%</option>
+                                                <option value="0.75">75%</option>
+                                                <option value="0.65">65%</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <p class="mt-2 text-[10px] text-gray-500">若未達目標，系統仍會自動逐步降低至最低可接受設定。</p>
+                                </details>
                             </div>
                         </div>
                     </div>
@@ -475,6 +498,35 @@
 
             await sourcePdf.destroy();
             return rasterPdf.save({ useObjectStreams: true, addDefaultPage: false, objectsPerTick: 50 });
+        }
+
+        async function compressPdfToTarget(pdfBytes, targetBytes, maxDpi, startingQuality) {
+            const rawProfiles = [
+                [maxDpi, startingQuality],
+                [Math.min(maxDpi, 150), Math.min(startingQuality, 0.80)],
+                [Math.min(maxDpi, 120), Math.min(startingQuality, 0.72)],
+                [Math.min(maxDpi, 96), Math.min(startingQuality, 0.62)],
+                [Math.min(maxDpi, 72), Math.min(startingQuality, 0.50)],
+                [60, 0.35]
+            ];
+            const seenProfiles = new Set();
+            const profiles = rawProfiles.filter(([dpi, quality]) => {
+                const key = `${dpi}-${quality}`;
+                if (seenProfiles.has(key)) return false;
+                seenProfiles.add(key);
+                return true;
+            });
+
+            let smallestResult = null;
+            for (let index = 0; index < profiles.length; index++) {
+                const [dpi, quality] = profiles[index];
+                document.getElementById('compressResult').textContent = `正在嘗試達到 ${formatBytes(targetBytes)}（第 ${index + 1}/${profiles.length} 階段）...`;
+                const bytes = await rasterizePdf(pdfBytes, dpi, quality);
+                const result = { bytes, dpi, quality, reached: bytes.length <= targetBytes };
+                if (!smallestResult || bytes.length < smallestResult.bytes.length) smallestResult = result;
+                if (result.reached) return result;
+            }
+            return smallestResult;
         }
         
         const editModal = document.getElementById('editModal');
@@ -718,6 +770,9 @@
                 const mergedPdf = await PDFLib.PDFDocument.create();
                 let outputFileName = pdfInput.files.length > 1 ? "Merged_" + pdfInput.files[0].name : pdfInput.files[0].name;
                 sourceFileSize = Array.from(pdfInput.files).reduce((total, file) => total + file.size, 0);
+                const suggestedTargetMb = Math.max(0.1, (sourceFileSize * 0.7) / (1024 * 1024));
+                document.getElementById('targetSizeMb').value = suggestedTargetMb.toFixed(suggestedTargetMb < 1 ? 2 : 1);
+                document.getElementById('strongSourceSize').textContent = `目前檔案 ${formatBytes(sourceFileSize)}；已先帶入約縮小 30% 的建議目標。`;
 
                 for (let i = 0; i < pdfInput.files.length; i++) {
                     const arrayBuffer = await pdfInput.files[i].arrayBuffer();
@@ -874,12 +929,18 @@
         const enableStrongCompressCb = document.getElementById('enableStrongCompressCb');
         const strongCompressControls = document.getElementById('strongCompressControls');
 
+        document.querySelectorAll('.target-size-preset').forEach(button => {
+            button.addEventListener('click', () => {
+                document.getElementById('targetSizeMb').value = button.dataset.targetMb;
+            });
+        });
+
         enableStrongCompressCb.onchange = (e) => {
             strongCompressControls.classList.toggle('opacity-50', !e.target.checked);
             strongCompressControls.classList.toggle('pointer-events-none', !e.target.checked);
             if (e.target.checked) {
                 document.getElementById('enableCompressCb').checked = false;
-                document.getElementById('compressResult').textContent = '⚠️ 強力瘦身會將整頁轉成圖片，文字搜尋、連結及表單不會保留。';
+                document.getElementById('compressResult').textContent = '請確認目標 MB；系統會自動尋找最清晰且能達標的設定。';
             } else {
                 document.getElementById('compressResult').textContent = '強力瘦身已關閉，不會將頁面轉成圖片。';
             }
@@ -1035,18 +1096,37 @@
             const useStrongCompression = document.getElementById('enableStrongCompressCb').checked;
 
             if (useStrongCompression) {
+                const targetSizeMb = parseFloat(document.getElementById('targetSizeMb').value);
+                if (!Number.isFinite(targetSizeMb) || targetSizeMb <= 0) {
+                    document.getElementById('compressResult').textContent = '⛔ 請輸入大於 0 的目標檔案大小。';
+                    alert('請輸入希望壓縮到的檔案大小（MB）。');
+                    return;
+                }
+                const targetBytes = Math.round(targetSizeMb * 1024 * 1024);
                 const renderSourceBytes = await exportPdf.save({
                     useObjectStreams: true,
                     addDefaultPage: false,
                     objectsPerTick: 50
                 });
-                const dpi = parseInt(document.getElementById('strongCompressDpi').value, 10);
-                const jpegQuality = parseFloat(document.getElementById('strongCompressQuality').value);
-                const rasterizedBytes = await rasterizePdf(renderSourceBytes, dpi, jpegQuality);
+                const maxDpi = parseInt(document.getElementById('strongCompressDpi').value, 10);
+                const startingQuality = parseFloat(document.getElementById('strongCompressQuality').value);
+                const compressionResult = await compressPdfToTarget(
+                    renderSourceBytes,
+                    targetBytes,
+                    maxDpi,
+                    startingQuality
+                );
+                const rasterizedBytes = compressionResult.bytes;
                 const savedRatio = uncompressedBytes.length > 0
                     ? (uncompressedBytes.length - rasterizedBytes.length) / uncompressedBytes.length
                     : 0;
                 const savedPercent = formatCompressionPercent(savedRatio);
+
+                if (!compressionResult.reached) {
+                    document.getElementById('compressResult').innerHTML = `⛔ 最低只能壓到 <strong>${formatBytes(rasterizedBytes.length)}</strong>，無法達到 ${formatBytes(targetBytes)}，因此未提供下載。`;
+                    alert(`目前最低只能壓到 ${formatBytes(rasterizedBytes.length)}，仍無法達到 ${formatBytes(targetBytes)} 的目標，因此不會下載檔案。`);
+                    return;
+                }
 
                 if (savedRatio < MIN_COMPRESSION_RATIO) {
                     document.getElementById('compressResult').innerHTML = `⛔ 強力瘦身僅能縮小 ${savedPercent}%，未達 10%，因此未提供下載。`;
@@ -1056,7 +1136,7 @@
 
                 pdfBytes = rasterizedBytes;
                 compressionPrefix = 'Strong_';
-                document.getElementById('compressResult').innerHTML = `✅ 強力瘦身完成：${formatBytes(uncompressedBytes.length)} → <strong>${formatBytes(pdfBytes.length)}</strong>，節省 ${savedPercent}%。`;
+                document.getElementById('compressResult').innerHTML = `✅ 已達到 ${formatBytes(targetBytes)} 目標：${formatBytes(uncompressedBytes.length)} → <strong>${formatBytes(pdfBytes.length)}</strong>，節省 ${savedPercent}%（${compressionResult.dpi} DPI／品質 ${Math.round(compressionResult.quality * 100)}%）。`;
             } else if (document.getElementById('enableCompressCb').checked) {
                 const optimizedBytes = await exportPdf.save({
                     useObjectStreams: true,
