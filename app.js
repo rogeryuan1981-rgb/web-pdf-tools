@@ -946,10 +946,15 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             document.getElementById('encryptControls').classList.toggle('pointer-events-none', !e.target.checked);
         };
 
-        document.getElementById('enableOcrCb').onchange = (e) => {
-            document.getElementById('ocrControls').classList.toggle('opacity-50', !e.target.checked);
-            document.getElementById('ocrControls').classList.toggle('pointer-events-none', !e.target.checked);
-        };
+        function setOcrControlsEnabled(enabled) {
+            const controls = document.getElementById('ocrControls');
+            controls.classList.toggle('opacity-50', !enabled);
+            controls.classList.toggle('pointer-events-none', !enabled);
+            controls.querySelectorAll('input, select').forEach(control => { control.disabled = !enabled; });
+        }
+
+        document.getElementById('enableOcrCb').onchange = (e) => setOcrControlsEnabled(e.target.checked);
+        setOcrControlsEnabled(false);
 
         const extractionFormatMeta = {
             docx: {
@@ -978,6 +983,18 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             input.addEventListener('change', updateExtractionFormatUI);
         });
         updateExtractionFormatUI();
+
+        function updateOcrModeUI() {
+            const mode = document.querySelector('input[name="ocrMode"]:checked')?.value || 'standard';
+            document.getElementById('ocrModeHint').textContent = mode === 'accurate'
+                ? '高準確度會提高渲染解析度，分別辨識「對比增強」與「黑白化」影像，再採用信心分數較高的結果。'
+                : '標準模式速度較快，適合清楚、端正的掃描文件。';
+        }
+
+        document.querySelectorAll('input[name="ocrMode"]').forEach(input => {
+            input.addEventListener('change', updateOcrModeUI);
+        });
+        updateOcrModeUI();
 
         const enableStrongCompressCb = document.getElementById('enableStrongCompressCb');
         const enableCompressCb = document.getElementById('enableCompressCb');
@@ -1362,6 +1379,97 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             });
         }
 
+        function getOcrRenderScale(page, mode) {
+            const baseViewport = page.getViewport({ scale: 1 });
+            const requestedScale = mode === 'accurate' ? (300 / 72) : 2;
+            const maxPixels = mode === 'accurate' ? 10000000 : 6000000;
+            const safeScale = Math.sqrt(maxPixels / Math.max(1, baseViewport.width * baseViewport.height));
+            return Math.max(1, Math.min(requestedScale, safeScale));
+        }
+
+        function getHistogramPercentile(histogram, total, ratio) {
+            const target = total * ratio;
+            let cumulative = 0;
+            for (let value = 0; value < histogram.length; value++) {
+                cumulative += histogram[value];
+                if (cumulative >= target) return value;
+            }
+            return 255;
+        }
+
+        function getOtsuThreshold(histogram, total) {
+            let weightedTotal = 0;
+            for (let value = 0; value < 256; value++) weightedTotal += value * histogram[value];
+            let backgroundWeight = 0;
+            let backgroundSum = 0;
+            let bestVariance = -1;
+            let bestThreshold = 160;
+
+            for (let threshold = 0; threshold < 256; threshold++) {
+                backgroundWeight += histogram[threshold];
+                if (!backgroundWeight) continue;
+                const foregroundWeight = total - backgroundWeight;
+                if (!foregroundWeight) break;
+                backgroundSum += threshold * histogram[threshold];
+                const backgroundMean = backgroundSum / backgroundWeight;
+                const foregroundMean = (weightedTotal - backgroundSum) / foregroundWeight;
+                const variance = backgroundWeight * foregroundWeight * Math.pow(backgroundMean - foregroundMean, 2);
+                if (variance > bestVariance) {
+                    bestVariance = variance;
+                    bestThreshold = threshold;
+                }
+            }
+            return bestThreshold;
+        }
+
+        function createOcrPreprocessedCanvas(sourceCanvas, binary = false) {
+            const canvas = document.createElement('canvas');
+            canvas.width = sourceCanvas.width;
+            canvas.height = sourceCanvas.height;
+            const context = canvas.getContext('2d', { alpha: false, willReadFrequently: true });
+            context.drawImage(sourceCanvas, 0, 0);
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const pixels = imageData.data;
+            const pixelCount = pixels.length / 4;
+            const grayscale = new Uint8Array(pixelCount);
+            const histogram = new Uint32Array(256);
+
+            for (let pixelIndex = 0, offset = 0; pixelIndex < pixelCount; pixelIndex++, offset += 4) {
+                const gray = Math.round(pixels[offset] * 0.299 + pixels[offset + 1] * 0.587 + pixels[offset + 2] * 0.114);
+                grayscale[pixelIndex] = gray;
+                histogram[gray] += 1;
+            }
+
+            const low = getHistogramPercentile(histogram, pixelCount, 0.01);
+            const high = getHistogramPercentile(histogram, pixelCount, 0.99);
+            const range = Math.max(32, high - low);
+            const normalizedHistogram = new Uint32Array(256);
+
+            for (let pixelIndex = 0; pixelIndex < pixelCount; pixelIndex++) {
+                const normalized = Math.max(0, Math.min(255, Math.round((grayscale[pixelIndex] - low) * 255 / range)));
+                grayscale[pixelIndex] = normalized;
+                normalizedHistogram[normalized] += 1;
+            }
+
+            const threshold = binary ? getOtsuThreshold(normalizedHistogram, pixelCount) : 0;
+            for (let pixelIndex = 0, offset = 0; pixelIndex < pixelCount; pixelIndex++, offset += 4) {
+                const value = binary ? (grayscale[pixelIndex] >= threshold ? 255 : 0) : grayscale[pixelIndex];
+                pixels[offset] = value;
+                pixels[offset + 1] = value;
+                pixels[offset + 2] = value;
+                pixels[offset + 3] = 255;
+            }
+            context.putImageData(imageData, 0, 0);
+            return canvas;
+        }
+
+        function getOcrConfidence(result) {
+            const textLength = (result?.data?.text || '').trim().length;
+            if (!textLength) return -1;
+            const confidence = Number(result?.data?.confidence);
+            return Number.isFinite(confidence) ? confidence : 0;
+        }
+
         function getSafeOutputStem(files) {
             if (files.length !== 1) return 'PDF_內容擷取';
             const stem = files[0].name.replace(/\.[^/.]+$/, '').replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_').trim();
@@ -1372,6 +1480,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             const extractedFiles = [];
             let currentOcrBase = 0;
             let currentOcrSpan = 0;
+            const ocrMode = document.querySelector('input[name="ocrMode"]:checked')?.value || 'standard';
 
             if (useOcr) {
                 if (!window.Tesseract) throw new Error('OCR 套件尚未載入');
@@ -1382,6 +1491,11 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
                             updateOperationProgress(currentOcrBase + message.progress * currentOcrSpan, '正在辨識掃描頁面文字');
                         }
                     }
+                });
+                await activeOcrWorker.setParameters({
+                    tessedit_pageseg_mode: Tesseract.PSM?.AUTO || '3',
+                    preserve_interword_spaces: '1',
+                    user_defined_dpi: ocrMode === 'accurate' ? '300' : '144'
                 });
             }
 
@@ -1409,19 +1523,65 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
                                 source = 'text';
                                 updateOperationProgress(pageBase + pageSpan, `讀取 ${file.name} · 第 ${pageNumber}/${pdf.numPages} 頁`);
                             } else if (useOcr) {
-                                const viewport = page.getViewport({ scale: 2 });
+                                const renderScale = getOcrRenderScale(page, ocrMode);
+                                const viewport = page.getViewport({ scale: renderScale });
                                 const canvas = document.createElement('canvas');
                                 canvas.width = Math.round(viewport.width);
                                 canvas.height = Math.round(viewport.height);
-                                await page.render({ canvasContext: canvas.getContext('2d', { alpha: false }), viewport }).promise;
-                                currentOcrBase = pageBase;
-                                currentOcrSpan = pageSpan;
-                                const result = await activeOcrWorker.recognize(canvas);
-                                ensureOperationNotCancelled(operation);
-                                rows = extractRowsFromOcrText(result.data.text || '');
-                                source = 'ocr';
-                                canvas.width = 1;
-                                canvas.height = 1;
+                                const canvasContext = canvas.getContext('2d', { alpha: false });
+                                canvasContext.fillStyle = '#ffffff';
+                                canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+                                await page.render({ canvasContext, viewport }).promise;
+
+                                try {
+                                    let result;
+                                    if (ocrMode === 'accurate') {
+                                        updateOperationProgress(pageBase + pageSpan * 0.06, `強化影像 · ${file.name} 第 ${pageNumber} 頁`);
+                                        await new Promise(resolve => requestAnimationFrame(resolve));
+                                        ensureOperationNotCancelled(operation);
+                                        const enhancedCanvas = createOcrPreprocessedCanvas(canvas, false);
+                                        currentOcrBase = pageBase + pageSpan * 0.08;
+                                        currentOcrSpan = pageSpan * 0.42;
+                                        let enhancedResult;
+                                        try {
+                                            enhancedResult = await activeOcrWorker.recognize(enhancedCanvas);
+                                        } finally {
+                                            enhancedCanvas.width = 1;
+                                            enhancedCanvas.height = 1;
+                                        }
+                                        ensureOperationNotCancelled(operation);
+
+                                        updateOperationProgress(pageBase + pageSpan * 0.50, `建立黑白版本 · ${file.name} 第 ${pageNumber} 頁`);
+                                        await new Promise(resolve => requestAnimationFrame(resolve));
+                                        ensureOperationNotCancelled(operation);
+                                        const binaryCanvas = createOcrPreprocessedCanvas(canvas, true);
+                                        currentOcrBase = pageBase + pageSpan * 0.52;
+                                        currentOcrSpan = pageSpan * 0.42;
+                                        let binaryResult;
+                                        try {
+                                            binaryResult = await activeOcrWorker.recognize(binaryCanvas);
+                                        } finally {
+                                            binaryCanvas.width = 1;
+                                            binaryCanvas.height = 1;
+                                        }
+                                        ensureOperationNotCancelled(operation);
+
+                                        result = getOcrConfidence(enhancedResult) >= getOcrConfidence(binaryResult)
+                                            ? enhancedResult
+                                            : binaryResult;
+                                        updateOperationProgress(pageBase + pageSpan, `完成高準確度辨識 · 第 ${pageNumber}/${pdf.numPages} 頁`);
+                                    } else {
+                                        currentOcrBase = pageBase;
+                                        currentOcrSpan = pageSpan;
+                                        result = await activeOcrWorker.recognize(canvas);
+                                        ensureOperationNotCancelled(operation);
+                                    }
+                                    rows = extractRowsFromOcrText(result.data.text || '');
+                                    source = 'ocr';
+                                } finally {
+                                    canvas.width = 1;
+                                    canvas.height = 1;
+                                }
                             } else {
                                 rows = [['[此頁沒有可讀文字；可啟用 OCR 再試]']];
                                 source = 'empty';
@@ -1571,8 +1731,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             extractContentBtn.disabled = true;
             const format = document.querySelector('input[name="extractFormat"]:checked')?.value || 'docx';
             const formatName = { docx: 'Word', xlsx: 'Excel', txt: 'TXT' }[format];
-            const operation = startOperation(`正在擷取內容並建立 ${formatName}`);
             const useOcr = document.getElementById('enableOcrCb').checked;
+            const highAccuracyOcr = useOcr && document.querySelector('input[name="ocrMode"]:checked')?.value === 'accurate';
+            const operation = startOperation(highAccuracyOcr ? `正在進行高準確度 OCR 並建立 ${formatName}` : `正在擷取內容並建立 ${formatName}`);
 
             try {
                 const files = Array.from(pdfInput.files);

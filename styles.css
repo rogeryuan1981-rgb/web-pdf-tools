@@ -251,6 +251,29 @@
     font-weight: 900;
 }
 
+.ocr-mode-option {
+    display: block;
+}
+
+.ocr-mode-card {
+    display: block;
+    min-height: 4.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--surface-border);
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.5);
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.dark .ocr-mode-card {
+    background: rgba(15, 23, 42, 0.38);
+}
+
+.ocr-mode-option:hover .ocr-mode-card {
+    transform: translateY(-1px);
+    border-color: rgba(124, 58, 237, 0.5);
+}
+
 .workspace-tool-btn[aria-current="page"] {
     box-shadow: 0 8px 24px rgba(37, 99, 235, 0.28), 0 0 0 1px rgba(125, 211, 252, 0.18) inset;
 }

@@ -197,14 +197,37 @@
                             <div><p class="text-sm font-bold">掃描文件 OCR</p><p class="text-xs text-gray-500">僅在頁面沒有可讀文字時啟用辨識。</p></div>
                             <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="enableOcrCb" aria-label="啟用掃描文件 OCR" class="sr-only peer"><div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div></label>
                         </div>
-                        <div id="ocrControls" class="opacity-50 pointer-events-none transition-opacity">
-                            <label class="block text-xs text-gray-500 mb-1">辨識語言</label>
-                            <select id="ocrLanguage" class="w-full sm:w-72 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900">
-                                <option value="chi_tra+eng" selected>繁體中文＋英文</option>
-                                <option value="chi_tra">繁體中文</option>
-                                <option value="eng">英文</option>
-                            </select>
-                            <p class="mt-2 text-[11px] text-amber-700 dark:text-amber-400">首次使用會在瀏覽器下載並快取 OCR 語言資料；處理速度及正確率取決於掃描品質。</p>
+                        <div id="ocrControls" class="opacity-50 pointer-events-none transition-opacity space-y-4">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">辨識語言</label>
+                                <select id="ocrLanguage" class="w-full sm:w-72 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900">
+                                    <option value="chi_tra+eng" selected>繁體中文＋英文</option>
+                                    <option value="chi_tra">繁體中文</option>
+                                    <option value="eng">英文</option>
+                                </select>
+                            </div>
+
+                            <fieldset>
+                                <legend class="block text-xs text-gray-500 mb-2">OCR 辨識模式</legend>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <label class="ocr-mode-option cursor-pointer">
+                                        <input type="radio" name="ocrMode" value="standard" class="sr-only peer" checked>
+                                        <span class="ocr-mode-card peer-checked:border-cyan-500 peer-checked:ring-2 peer-checked:ring-cyan-500/20">
+                                            <span><strong class="block text-sm">標準模式</strong><small class="block mt-1 text-gray-500">約 144 DPI，單次辨識</small></span>
+                                        </span>
+                                    </label>
+                                    <label class="ocr-mode-option cursor-pointer">
+                                        <input type="radio" name="ocrMode" value="accurate" class="sr-only peer">
+                                        <span class="ocr-mode-card peer-checked:border-violet-500 peer-checked:ring-2 peer-checked:ring-violet-500/20">
+                                            <span class="flex items-center gap-2"><strong class="text-sm">高準確度模式</strong><span class="rounded-full bg-violet-100 dark:bg-violet-900/50 px-2 py-0.5 text-[10px] font-bold text-violet-700 dark:text-violet-300">較慢</span></span>
+                                            <small class="block mt-1 text-gray-500">最高約 300 DPI、對比增強、雙次辨識</small>
+                                        </span>
+                                    </label>
+                                </div>
+                                <p id="ocrModeHint" class="mt-2 text-[11px] text-gray-500">標準模式速度較快，適合清楚、端正的掃描文件。</p>
+                            </fieldset>
+
+                            <p class="text-[11px] text-amber-700 dark:text-amber-400">首次使用會在瀏覽器下載並快取 OCR 語言資料；高準確度模式會明顯增加處理時間與記憶體用量。</p>
                         </div>
                     </div>
                 </div>
