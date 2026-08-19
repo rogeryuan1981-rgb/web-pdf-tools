@@ -25,7 +25,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
         const thumbnailsContainer = document.getElementById('thumbnailsContainer');
         const downloadAllBtn = document.getElementById('downloadAllBtn');
         const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
-        const pdfToExcelBtn = document.getElementById('pdfToExcelBtn'); 
+        const extractContentBtn = document.getElementById('extractContentBtn');
         const downloadAllOriginalHTML = downloadAllBtn.innerHTML;
 
         function getPrimaryActionHTML(tool) {
@@ -43,7 +43,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             compress: { title: 'PDF 瘦身', description: '先評估無損空間，或指定希望壓到的目標大小。', upload: '載入要瘦身的 PDF' },
             edit: { title: '編輯 PDF', description: '加入浮水印、簽名，或選擇頁面進行內容覆蓋。', upload: '載入要編輯的 PDF' },
             encrypt: { title: '密碼加密', description: '設定開啟密碼；加密失敗時不會輸出檔案。', upload: '載入要加密的 PDF' },
-            excel: { title: '轉為 Excel', description: '抽取文字型 PDF 的內容與簡單表格結構。', upload: '載入要轉換的 PDF' }
+            excel: { title: '內容擷取', description: '依需求輸出可編輯 Word、表格 Excel 或純文字 TXT。', upload: '載入要擷取內容的 PDF' }
         };
 
         function setWorkspaceTool(tool) {
@@ -58,7 +58,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             });
             document.getElementById('settingsGrid').classList.toggle('hidden', !['edit', 'encrypt', 'compress'].includes(tool));
             document.getElementById('pageWorkspace').classList.toggle('hidden', !['organize', 'edit'].includes(tool));
-            pdfToExcelBtn.classList.toggle('hidden', tool !== 'excel');
+            extractContentBtn.classList.toggle('hidden', tool !== 'excel');
             downloadAllBtn.classList.toggle('hidden', tool === 'excel');
             downloadAllBtn.innerHTML = getPrimaryActionHTML(tool);
             downloadSelectedBtn.classList.toggle('hidden', tool !== 'organize' || selectedPages.size === 0);
@@ -161,6 +161,17 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             const unitIndex = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
             const value = bytes / Math.pow(1024, unitIndex);
             return `${value.toFixed(unitIndex === 0 ? 0 : 2)} ${units[unitIndex]}`;
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = filename;
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            window.setTimeout(() => URL.revokeObjectURL(url), 1000);
         }
 
         function showToast(message, type = 'error') {
@@ -940,6 +951,34 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             document.getElementById('ocrControls').classList.toggle('pointer-events-none', !e.target.checked);
         };
 
+        const extractionFormatMeta = {
+            docx: {
+                button: '匯出 Word',
+                hint: 'Word 會建立可編輯段落並保留分頁，但不承諾與原 PDF 完全相同的版面。'
+            },
+            xlsx: {
+                button: '擷取表格至 Excel',
+                hint: 'Excel 會依文字座標推測列與欄，每份來源 PDF 建立一個工作表；合併儲存格與無框線表格可能錯位。'
+            },
+            txt: {
+                button: '匯出純文字',
+                hint: 'TXT 只保留文字、來源檔名與頁碼，不保留字型、圖片或版面，最適合搜尋與再次整理。'
+            }
+        };
+
+        function updateExtractionFormatUI() {
+            const format = document.querySelector('input[name="extractFormat"]:checked')?.value || 'docx';
+            const meta = extractionFormatMeta[format];
+            const label = document.getElementById('extractContentBtnLabel');
+            if (label) label.textContent = meta.button;
+            document.getElementById('extractFormatHint').textContent = meta.hint;
+        }
+
+        document.querySelectorAll('input[name="extractFormat"]').forEach(input => {
+            input.addEventListener('change', updateExtractionFormatUI);
+        });
+        updateExtractionFormatUI();
+
         const enableStrongCompressCb = document.getElementById('enableStrongCompressCb');
         const enableCompressCb = document.getElementById('enableCompressCb');
         const strongCompressControls = document.getElementById('strongCompressControls');
@@ -1292,7 +1331,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
         document.getElementById('resetBtn').onclick = () => { location.reload(); }; 
 
         // ==========================================
-        // PDF 轉 Excel 核心邏輯
+        // PDF 內容擷取：Word / Excel / TXT
         // ==========================================
         function extractRowsFromTextItems(items) {
             const rowMap = new Map();
@@ -1323,90 +1362,254 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             });
         }
 
-        pdfToExcelBtn.onclick = async () => {
-            if (pdfInput.files.length === 0) return;
-            const btnOriginalHTML = pdfToExcelBtn.innerHTML;
-            pdfToExcelBtn.innerHTML = '<div class="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div> 處理中...';
-            pdfToExcelBtn.disabled = true;
-            const operation = startOperation('正在轉換 PDF 為 Excel');
-            const useOcr = document.getElementById('enableOcrCb').checked;
+        function getSafeOutputStem(files) {
+            if (files.length !== 1) return 'PDF_內容擷取';
+            const stem = files[0].name.replace(/\.[^/.]+$/, '').replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_').trim();
+            return stem || 'PDF_內容擷取';
+        }
+
+        async function extractContentFromPdfs(files, useOcr, operation) {
+            const extractedFiles = [];
             let currentOcrBase = 0;
             let currentOcrSpan = 0;
 
-            try {
-                const files = Array.from(pdfInput.files);
-                const workbook = XLSX.utils.book_new();
-                if (useOcr) {
-                    if (!window.Tesseract) throw new Error('OCR 套件尚未載入');
-                    const languages = document.getElementById('ocrLanguage').value.split('+');
-                    activeOcrWorker = await Tesseract.createWorker(languages, 1, {
-                        logger: message => {
-                            if (message.status === 'recognizing text') {
-                                updateOperationProgress(currentOcrBase + message.progress * currentOcrSpan, '正在辨識掃描頁面文字');
-                            }
+            if (useOcr) {
+                if (!window.Tesseract) throw new Error('OCR 套件尚未載入');
+                const languages = document.getElementById('ocrLanguage').value.split('+');
+                activeOcrWorker = await Tesseract.createWorker(languages, 1, {
+                    logger: message => {
+                        if (message.status === 'recognizing text') {
+                            updateOperationProgress(currentOcrBase + message.progress * currentOcrSpan, '正在辨識掃描頁面文字');
                         }
-                    });
-                }
+                    }
+                });
+            }
 
-                for (let fileIdx = 0; fileIdx < files.length; fileIdx++) {
-                    ensureOperationNotCancelled(operation);
-                    const file = files[fileIdx];
-                    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
-                    const allRows = [];
+            for (let fileIdx = 0; fileIdx < files.length; fileIdx++) {
+                ensureOperationNotCancelled(operation);
+                const file = files[fileIdx];
+                const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+                const extractedFile = { name: file.name, pages: [] };
 
+                try {
                     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
                         ensureOperationNotCancelled(operation);
                         const page = await pdf.getPage(pageNumber);
-                        const textContent = await page.getTextContent();
-                        const readableCharacters = textContent.items.reduce((total, item) => total + (item.str || '').trim().length, 0);
-                        const pageBase = ((fileIdx + (pageNumber - 1) / pdf.numPages) / files.length) * 100;
-                        const pageSpan = (1 / pdf.numPages / files.length) * 100;
+                        const pageBase = ((fileIdx + (pageNumber - 1) / pdf.numPages) / files.length) * 94;
+                        const pageSpan = (1 / pdf.numPages / files.length) * 94;
 
-                        if (readableCharacters >= 5) {
-                            allRows.push(...extractRowsFromTextItems(textContent.items));
-                            updateOperationProgress(pageBase + pageSpan, `讀取 ${file.name} · 第 ${pageNumber}/${pdf.numPages} 頁`);
-                        } else if (useOcr) {
-                            const viewport = page.getViewport({ scale: 2 });
-                            const canvas = document.createElement('canvas');
-                            canvas.width = Math.round(viewport.width);
-                            canvas.height = Math.round(viewport.height);
-                            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-                            currentOcrBase = pageBase;
-                            currentOcrSpan = pageSpan;
-                            const result = await activeOcrWorker.recognize(canvas);
-                            ensureOperationNotCancelled(operation);
-                            const ocrRows = extractRowsFromOcrText(result.data.text || '');
-                            allRows.push(...(ocrRows.length ? ocrRows : [['[OCR 未辨識到文字]']]));
-                            canvas.width = 1;
-                            canvas.height = 1;
-                        } else {
-                            allRows.push(['[此頁沒有可讀文字；可啟用 OCR 再試]']);
-                            updateOperationProgress(pageBase + pageSpan, `略過掃描頁面 · 第 ${pageNumber}/${pdf.numPages} 頁`);
+                        try {
+                            const textContent = await page.getTextContent();
+                            const readableCharacters = textContent.items.reduce((total, item) => total + (item.str || '').trim().length, 0);
+                            let rows;
+                            let source;
+
+                            if (readableCharacters >= 5) {
+                                rows = extractRowsFromTextItems(textContent.items);
+                                source = 'text';
+                                updateOperationProgress(pageBase + pageSpan, `讀取 ${file.name} · 第 ${pageNumber}/${pdf.numPages} 頁`);
+                            } else if (useOcr) {
+                                const viewport = page.getViewport({ scale: 2 });
+                                const canvas = document.createElement('canvas');
+                                canvas.width = Math.round(viewport.width);
+                                canvas.height = Math.round(viewport.height);
+                                await page.render({ canvasContext: canvas.getContext('2d', { alpha: false }), viewport }).promise;
+                                currentOcrBase = pageBase;
+                                currentOcrSpan = pageSpan;
+                                const result = await activeOcrWorker.recognize(canvas);
+                                ensureOperationNotCancelled(operation);
+                                rows = extractRowsFromOcrText(result.data.text || '');
+                                source = 'ocr';
+                                canvas.width = 1;
+                                canvas.height = 1;
+                            } else {
+                                rows = [['[此頁沒有可讀文字；可啟用 OCR 再試]']];
+                                source = 'empty';
+                                updateOperationProgress(pageBase + pageSpan, `略過掃描頁面 · 第 ${pageNumber}/${pdf.numPages} 頁`);
+                            }
+
+                            if (!rows.length) rows = [[source === 'ocr' ? '[OCR 未辨識到文字]' : '[此頁沒有可讀文字]']];
+                            extractedFile.pages.push({ pageNumber, rows, source });
+                        } finally {
+                            page.cleanup();
                         }
-                        allRows.push([]);
-                        page.cleanup();
                     }
+                } finally {
                     await pdf.destroy();
-
-                    let safeSheetName = file.name.replace(/\.[^/.]+$/, '').replace(/[\\/*?:\[\]]/g, '_').substring(0, 31);
-                    if (!safeSheetName) safeSheetName = `Sheet${fileIdx + 1}`;
-                    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(allRows), safeSheetName);
                 }
 
-                updateOperationProgress(100, '正在建立 Excel 檔案');
-                XLSX.writeFile(workbook, 'PDF_Export.xlsx');
-                showToast('Excel 檔案已建立完成。', 'success');
+                extractedFiles.push(extractedFile);
+            }
+
+            return extractedFiles;
+        }
+
+        function buildTxtBlob(extractedFiles) {
+            const sections = [];
+            extractedFiles.forEach(file => {
+                sections.push(`===== ${file.name} =====`);
+                file.pages.forEach(page => {
+                    sections.push(`--- 第 ${page.pageNumber} 頁 ---`);
+                    sections.push(page.rows.map(row => row.join('\t')).join('\n'));
+                });
+            });
+            return new Blob([`\uFEFF${sections.join('\n\n')}`], { type: 'text/plain;charset=utf-8' });
+        }
+
+        function appendUniqueSheet(workbook, rows, preferredName, index) {
+            const base = (preferredName.replace(/\.[^/.]+$/, '').replace(/[\\/*?:\[\]]/g, '_').substring(0, 31) || `Sheet${index + 1}`);
+            let name = base;
+            let suffix = 2;
+            while (workbook.SheetNames.includes(name)) {
+                const ending = `_${suffix++}`;
+                name = `${base.substring(0, 31 - ending.length)}${ending}`;
+            }
+            XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(rows), name);
+        }
+
+        function buildExcelBlob(extractedFiles) {
+            if (!window.XLSX) throw new Error('Excel 套件尚未載入');
+            const workbook = XLSX.utils.book_new();
+            extractedFiles.forEach((file, fileIndex) => {
+                const rows = [];
+                file.pages.forEach(page => {
+                    rows.push([`第 ${page.pageNumber} 頁`]);
+                    rows.push(...page.rows, []);
+                });
+                appendUniqueSheet(workbook, rows, file.name, fileIndex);
+            });
+            const bytes = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+            return new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        }
+
+        async function buildWordBlob(extractedFiles) {
+            if (!window.docx) throw new Error('Word 套件尚未載入');
+            const { Document, Packer, Paragraph, TextRun, PageBreak } = window.docx;
+            const children = [];
+            const totalPages = extractedFiles.reduce((sum, file) => sum + file.pages.length, 0);
+            let emittedPages = 0;
+
+            if (extractedFiles.length > 1) {
+                children.push(new Paragraph({
+                    style: 'DocumentTitle',
+                    children: [new TextRun('PDF 內容擷取')]
+                }));
+            }
+
+            extractedFiles.forEach(file => {
+                children.push(new Paragraph({
+                    style: extractedFiles.length > 1 ? 'SourceTitle' : 'DocumentTitle',
+                    children: [new TextRun(file.name.replace(/\.[^/.]+$/, ''))]
+                }));
+
+                file.pages.forEach(page => {
+                    children.push(new Paragraph({
+                        style: 'PageLabel',
+                        children: [new TextRun(`第 ${page.pageNumber} 頁${page.source === 'ocr' ? ' · OCR' : ''}`)]
+                    }));
+                    page.rows.forEach(row => {
+                        children.push(new Paragraph({
+                            style: 'ExtractedBody',
+                            children: [new TextRun(row.join('    '))]
+                        }));
+                    });
+                    emittedPages += 1;
+                    if (emittedPages < totalPages) children.push(new Paragraph({ children: [new PageBreak()] }));
+                });
+            });
+
+            const documentFile = new Document({
+                creator: 'Web PDF Tools',
+                description: '從 PDF 擷取的可編輯文字內容',
+                styles: {
+                    default: {
+                        document: {
+                            run: { font: 'Arial', size: 22, color: '111827' },
+                            paragraph: { spacing: { after: 120, line: 264 } }
+                        }
+                    },
+                    paragraphStyles: [
+                        {
+                            id: 'DocumentTitle', name: 'Document Title', basedOn: 'Normal', next: 'ExtractedBody', quickFormat: true,
+                            run: { font: 'Arial', size: 40, bold: true, color: '0F172A' },
+                            paragraph: { spacing: { before: 0, after: 240 }, outlineLevel: 0 }
+                        },
+                        {
+                            id: 'SourceTitle', name: 'Source Title', basedOn: 'Normal', next: 'PageLabel', quickFormat: true,
+                            run: { font: 'Arial', size: 32, bold: true, color: '0E7490' },
+                            paragraph: { spacing: { before: 0, after: 160 }, outlineLevel: 1 }
+                        },
+                        {
+                            id: 'PageLabel', name: 'Page Label', basedOn: 'Normal', next: 'ExtractedBody', quickFormat: true,
+                            run: { font: 'Arial', size: 18, bold: true, color: '64748B' },
+                            paragraph: { spacing: { before: 0, after: 160 } }
+                        },
+                        {
+                            id: 'ExtractedBody', name: 'Extracted Body', basedOn: 'Normal', next: 'ExtractedBody', quickFormat: true,
+                            run: { font: 'Arial', size: 22, color: '111827' },
+                            paragraph: { spacing: { before: 0, after: 120, line: 264 } }
+                        }
+                    ]
+                },
+                sections: [{
+                    properties: {
+                        page: {
+                            size: { width: 12240, height: 15840 },
+                            margin: { top: 1440, right: 1440, bottom: 1440, left: 1440, header: 708, footer: 708 }
+                        }
+                    },
+                    children
+                }]
+            });
+            return Packer.toBlob(documentFile);
+        }
+
+        extractContentBtn.onclick = async () => {
+            if (pdfInput.files.length === 0) return;
+            const btnOriginalHTML = extractContentBtn.innerHTML;
+            extractContentBtn.innerHTML = '<div class="w-4 h-4 border-2 border-cyan-600 border-t-transparent rounded-full animate-spin"></div> 處理中...';
+            extractContentBtn.disabled = true;
+            const format = document.querySelector('input[name="extractFormat"]:checked')?.value || 'docx';
+            const formatName = { docx: 'Word', xlsx: 'Excel', txt: 'TXT' }[format];
+            const operation = startOperation(`正在擷取內容並建立 ${formatName}`);
+            const useOcr = document.getElementById('enableOcrCb').checked;
+
+            try {
+                const files = Array.from(pdfInput.files);
+                const extractedFiles = await extractContentFromPdfs(files, useOcr, operation);
+                ensureOperationNotCancelled(operation);
+                updateOperationProgress(96, `正在建立 ${formatName} 檔案`);
+
+                const outputStem = getSafeOutputStem(files);
+                let blob;
+                let filename;
+                if (format === 'docx') {
+                    blob = await buildWordBlob(extractedFiles);
+                    filename = `${outputStem}_可編輯文字.docx`;
+                } else if (format === 'xlsx') {
+                    blob = buildExcelBlob(extractedFiles);
+                    filename = `${outputStem}_表格擷取.xlsx`;
+                } else {
+                    blob = buildTxtBlob(extractedFiles);
+                    filename = `${outputStem}_純文字.txt`;
+                }
+
+                ensureOperationNotCancelled(operation);
+                updateOperationProgress(100, `${formatName} 檔案已完成`);
+                downloadBlob(blob, filename);
+                showToast(`已建立 ${filename}（${formatBytes(blob.size)}）`, 'success');
             } catch (err) {
                 console.error(err);
-                if (operation.cancelled || err instanceof OperationCancelledError) showToast('已取消 OCR／Excel 轉換。', 'info');
-                else showToast('轉換 Excel 發生錯誤。OCR 首次使用需保持網路連線，且加密或損毀的 PDF 可能無法處理。');
+                if (operation.cancelled || err instanceof OperationCancelledError) showToast('已取消內容擷取。', 'info');
+                else showToast(`建立 ${formatName} 時發生錯誤。OCR 首次使用需保持網路連線，且加密或損毀的 PDF 可能無法處理。`);
             } finally {
                 if (activeOcrWorker) {
                     await activeOcrWorker.terminate().catch(() => {});
                     activeOcrWorker = null;
                 }
                 finishOperation();
-                pdfToExcelBtn.innerHTML = btnOriginalHTML;
-                pdfToExcelBtn.disabled = false;
+                extractContentBtn.innerHTML = btnOriginalHTML;
+                extractContentBtn.disabled = false;
+                updateExtractionFormatUI();
             }
         };

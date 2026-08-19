@@ -18,6 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx@9.5.1/dist/index.umd.cjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@7/dist/tesseract.min.js"></script>
     <link rel="stylesheet" href="./styles.css">
 </head>
@@ -41,7 +42,7 @@
             <div class="text-center py-6 sm:py-10">
                 <span class="tech-badge inline-flex items-center px-3 py-1 rounded-full text-xs font-bold mb-4"><span class="status-dot"></span>LOCAL PROCESSING · ZERO UPLOAD</span>
                 <h2 class="hero-title text-3xl sm:text-5xl font-black tracking-tight mb-4">先選擇需求，再開始處理 PDF</h2>
-                <p class="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">合併、分割、排序、編輯、加密、瘦身與轉 Excel 都集中在同一個工作區。上傳後仍可自由搭配功能。</p>
+                <p class="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">合併、分割、排序、編輯、加密、瘦身，以及擷取成 Word、Excel 或純文字，都集中在同一個工作區。</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" aria-label="操作步驟">
@@ -81,9 +82,9 @@
                         <div class="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 text-lg">🔒</div>
                         <h4 class="font-bold mb-1">密碼加密</h4><p class="text-xs text-gray-500 leading-relaxed">設定開啟密碼，失敗時不輸出未加密檔案。</p>
                     </button>
-                    <button type="button" data-select-tool="excel" class="tool-card text-left bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:border-green-500 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 transition-all">
-                        <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 flex items-center justify-center mb-3 font-bold">X</div>
-                        <h4 class="font-bold mb-1">轉為 Excel</h4><p class="text-xs text-gray-500 leading-relaxed">抽取文字與簡單表格，每份 PDF 建立工作表。</p>
+                    <button type="button" data-select-tool="excel" class="tool-card text-left bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:border-cyan-500 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all">
+                        <div class="w-10 h-10 rounded-lg bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-400 flex items-center justify-center mb-3 font-black">Aa</div>
+                        <h4 class="font-bold mb-1">擷取 PDF 內容</h4><p class="text-xs text-gray-500 leading-relaxed">依用途輸出可編輯 Word、表格 Excel 或純文字 TXT。</p>
                     </button>
                     <button type="button" data-select-tool="all" class="tool-card text-left bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-xl p-5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                         <div class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center mb-3 text-lg">＋</div>
@@ -119,9 +120,9 @@
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-2 items-center">
-                    <button id="pdfToExcelBtn" class="min-h-10 text-sm px-4 py-2 border border-green-600 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30 rounded-lg font-medium transition-colors flex items-center gap-1">
+                    <button id="extractContentBtn" class="min-h-10 text-sm px-4 py-2 border border-cyan-600 text-cyan-700 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/30 rounded-lg font-medium transition-colors flex items-center gap-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        轉為 Excel
+                        <span id="extractContentBtnLabel">匯出 Word</span>
                     </button>
                     <button id="downloadSelectedBtn" class="min-h-10 text-sm px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors hidden shadow-sm">
                         匯出選取頁面 (分割)
@@ -141,7 +142,7 @@
                 <button type="button" data-workspace-tool="compress" class="workspace-tool-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium border transition-colors">PDF 瘦身</button>
                 <button type="button" data-workspace-tool="edit" class="workspace-tool-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium border transition-colors">編輯 PDF</button>
                 <button type="button" data-workspace-tool="encrypt" class="workspace-tool-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium border transition-colors">密碼加密</button>
-                <button type="button" data-workspace-tool="excel" class="workspace-tool-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium border transition-colors">轉為 Excel</button>
+                <button type="button" data-workspace-tool="excel" class="workspace-tool-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium border transition-colors">內容擷取</button>
             </nav>
 
             <div id="operationProgressPanel" class="hidden workspace-bar rounded-xl p-4" aria-live="polite">
@@ -157,12 +158,40 @@
                 <p id="workspaceToolDescription" class="text-xs text-gray-500">拖曳頁面調整順序，或勾選需要分割的頁面。</p>
             </div>
 
-            <div id="excelToolPanel" data-tool-panel="excel" class="hidden bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-                <div class="max-w-2xl">
-                    <div class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 flex items-center justify-center font-black text-xl mb-4">X</div>
-                    <h3 class="text-xl font-bold mb-2">將 PDF 文字整理成 Excel</h3>
-                    <p class="text-sm text-gray-500 leading-relaxed">適合文字型 PDF 與結構簡單的表格；掃描圖片可選擇使用 OCR。複雜格線、合併儲存格及版面不保證完整還原。</p>
-                    <p class="mt-3 text-xs text-green-700 dark:text-green-400">每份來源 PDF 會建立一個獨立工作表。</p>
+            <div id="contentExtractPanel" data-tool-panel="excel" class="hidden bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                <div class="max-w-3xl">
+                    <div class="w-12 h-12 rounded-xl bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-400 flex items-center justify-center font-black text-lg mb-4">Aa</div>
+                    <h3 class="text-xl font-bold mb-2">擷取 PDF 內容</h3>
+                    <p class="text-sm text-gray-500 leading-relaxed">先依後續用途選擇格式。掃描文件可啟用 OCR；文字會保留，但複雜版面與表格結構不保證完整還原。</p>
+
+                    <fieldset class="mt-5">
+                        <legend class="text-sm font-bold mb-3">想拿擷取結果做什麼？</legend>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <label class="format-option cursor-pointer">
+                                <input type="radio" name="extractFormat" value="docx" class="sr-only peer" checked>
+                                <span class="format-option-card peer-checked:border-cyan-500 peer-checked:ring-2 peer-checked:ring-cyan-500/20">
+                                    <span class="format-option-icon bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">W</span>
+                                    <span><strong class="block text-sm">可編輯文件</strong><small class="block mt-1 text-gray-500">輸出 Word，依頁面整理段落</small></span>
+                                </span>
+                            </label>
+                            <label class="format-option cursor-pointer">
+                                <input type="radio" name="extractFormat" value="xlsx" class="sr-only peer">
+                                <span class="format-option-card peer-checked:border-emerald-500 peer-checked:ring-2 peer-checked:ring-emerald-500/20">
+                                    <span class="format-option-icon bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">X</span>
+                                    <span><strong class="block text-sm">擷取表格</strong><small class="block mt-1 text-gray-500">輸出 Excel，適合規則列欄</small></span>
+                                </span>
+                            </label>
+                            <label class="format-option cursor-pointer">
+                                <input type="radio" name="extractFormat" value="txt" class="sr-only peer">
+                                <span class="format-option-card peer-checked:border-violet-500 peer-checked:ring-2 peer-checked:ring-violet-500/20">
+                                    <span class="format-option-icon bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300">T</span>
+                                    <span><strong class="block text-sm">只要純文字</strong><small class="block mt-1 text-gray-500">輸出 TXT，結果最單純穩定</small></span>
+                                </span>
+                            </label>
+                        </div>
+                        <p id="extractFormatHint" class="mt-3 rounded-lg bg-cyan-50 dark:bg-cyan-950/30 border border-cyan-100 dark:border-cyan-900 px-3 py-2 text-xs text-cyan-800 dark:text-cyan-300">Word 會建立可編輯段落並保留分頁，但不承諾與原 PDF 完全相同的版面。</p>
+                    </fieldset>
+
                     <div class="mt-5 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
                         <div class="flex items-center justify-between gap-4">
                             <div><p class="text-sm font-bold">掃描文件 OCR</p><p class="text-xs text-gray-500">僅在頁面沒有可讀文字時啟用辨識。</p></div>
@@ -175,7 +204,7 @@
                                 <option value="chi_tra">繁體中文</option>
                                 <option value="eng">英文</option>
                             </select>
-                            <p class="mt-2 text-[11px] text-amber-700 dark:text-amber-400">首次使用需下載 OCR 語言資料，處理速度及正確率取決於掃描品質。</p>
+                            <p class="mt-2 text-[11px] text-amber-700 dark:text-amber-400">首次使用會在瀏覽器下載並快取 OCR 語言資料；處理速度及正確率取決於掃描品質。</p>
                         </div>
                     </div>
                 </div>
@@ -360,7 +389,6 @@
                 <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <div class="space-y-1">
                     <p><strong>操作提示：</strong>您可以<strong>拖曳卡片來更改頁面順序</strong>。滑鼠移至卡片上，點選 <svg class="inline w-4 h-4 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> 可進入單頁編輯模式；點選 ↺ 可旋轉。</p>
-                    <p class="text-xs text-blue-600 dark:text-blue-400">⚠️ <strong>PDF 轉 Excel 注意事項：</strong>純前端技術僅能進行「純文字結構與座標抽取」，無法完美還原複雜的表格格線或合併儲存格。</p>
                 </div>
             </div>
 
@@ -428,6 +456,7 @@
             <p>1. 本工具為純前端本地端運算，您的檔案<strong>絕不會</strong>上傳至任何外部伺服器。</p>
             <p>2. 「PDF 安全性加密」功能使用 ESM 動態引入前端套件，處理過程皆於本機記憶體完成。</p>
             <p>3. 單頁編輯之「立可白/新增文字」功能僅為圖層覆蓋，並非修改 PDF 底層原始程式碼。</p>
+            <p>4. OCR 只會下載語言模型至瀏覽器快取；PDF、辨識文字與匯出檔案不會傳送至外部服務。</p>
         </div>
     </footer>
     <script src="./app.js"></script>
