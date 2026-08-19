@@ -66,7 +66,7 @@
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Web PDF Tools
             </h1>
-            <button id="darkModeToggle" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors">
+            <button id="darkModeToggle" type="button" aria-label="切換深色模式" title="切換深色模式" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <span id="themeIcon">🌙</span>
             </button>
         </div>
@@ -127,8 +127,8 @@
             </div>
         </section>
         
-        <section id="uploadSection" class="w-full flex flex-col items-center justify-center p-8 sm:p-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 hover:border-blue-500 dark:hover:border-blue-400 transition-all cursor-pointer text-center group relative overflow-hidden">
-            <div id="loadingOverlay" class="hidden absolute inset-0 bg-white/80 dark:bg-gray-800/80 flex-col items-center justify-center z-10">
+        <section id="uploadSection" role="button" tabindex="0" aria-label="選取或拖曳 PDF 檔案" class="w-full flex flex-col items-center justify-center p-8 sm:p-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 hover:border-blue-500 dark:hover:border-blue-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer text-center group relative overflow-hidden">
+            <div id="loadingOverlay" aria-live="polite" aria-busy="true" class="hidden absolute inset-0 bg-white/80 dark:bg-gray-800/80 flex-col items-center justify-center z-10">
                 <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
                 <p id="loadingStatusText" class="font-medium">正在讀取 PDF...</p>
             </div>
@@ -182,7 +182,7 @@
                             全域文字浮水印
                         </h3>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="enableWmCb" class="sr-only peer">
+                            <input type="checkbox" id="enableWmCb" aria-label="啟用全域文字浮水印" class="sr-only peer">
                             <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                         </label>
                     </div>
@@ -208,7 +208,7 @@
                             簽名檔去背與疊加
                         </h3>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="enableSigCb" class="sr-only peer">
+                            <input type="checkbox" id="enableSigCb" aria-label="啟用簽名疊加" class="sr-only peer">
                             <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                         </label>
                     </div>
@@ -237,7 +237,7 @@
                             PDF 安全性加密
                         </h3>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="enableEncryptCb" class="sr-only peer">
+                            <input type="checkbox" id="enableEncryptCb" aria-label="啟用 PDF 密碼加密" class="sr-only peer">
                             <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                         </label>
                     </div>
@@ -261,7 +261,7 @@
                             PDF 無損瘦身
                         </h3>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="enableCompressCb" class="sr-only peer" checked>
+                            <input type="checkbox" id="enableCompressCb" aria-label="啟用 PDF 無損瘦身" class="sr-only peer" checked>
                             <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600 peer-disabled:opacity-40 peer-disabled:cursor-not-allowed"></div>
                         </label>
                     </div>
@@ -277,7 +277,7 @@
                                     <p class="text-[10px] text-orange-600 dark:text-orange-400">降低 DPI／JPEG 品質；會失去搜尋、連結及表單</p>
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="enableStrongCompressCb" class="sr-only peer">
+                                    <input type="checkbox" id="enableStrongCompressCb" aria-label="啟用強力瘦身並將整頁轉成圖片" class="sr-only peer">
                                     <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
                                 </label>
                             </div>
@@ -347,10 +347,10 @@
         </section>
     </main>
 
-    <div id="editModal" class="fixed inset-0 z-50 hidden bg-gray-900/90 flex-col backdrop-blur-sm">
+    <div id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" class="fixed inset-0 z-50 hidden bg-gray-900/90 flex-col backdrop-blur-sm">
         <div class="bg-white dark:bg-gray-800 shadow-md p-4 flex flex-wrap justify-between items-center z-10 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center gap-4">
-                <span class="font-bold text-lg mr-4">單頁進階編輯</span>
+                <span id="editModalTitle" class="font-bold text-lg mr-4">單頁進階編輯</span>
                 
                 <div class="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-lg">
                     <button id="toolWhiteout" class="px-3 py-1.5 text-sm font-medium rounded-md bg-white dark:bg-gray-700 shadow shadow-sm text-blue-600 dark:text-blue-400 transition-colors">立可白 (框選)</button>
@@ -396,6 +396,7 @@
         let sourceFileSize = 0;
         let pageRotations = {};   
         let selectedPages = new Set(); 
+        let isLoadingPdf = false;
         
         let pageEdits = {}; 
         const MIN_COMPRESSION_RATIO = 0.10;
@@ -588,6 +589,7 @@
             redrawOverlay();
             editModal.classList.remove('hidden');
             editModal.classList.add('flex');
+            document.getElementById('closeEditModalBtn').focus();
         }
 
         document.getElementById('closeEditModalBtn').onclick = () => {
@@ -602,7 +604,7 @@
                     
                     let badgeHTML = '';
                     if (hasEdits) {
-                        badgeHTML = '<span class="absolute top-2 left-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded shadow z-10">已編輯</span> ';
+                        badgeHTML = '<span class="absolute top-9 left-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded shadow z-10">已編輯</span> ';
                     }
                     
                     const currentText = pageLabel.textContent.replace('已編輯', '').trim();
@@ -611,6 +613,12 @@
             }
             activeEditPageIdx = null;
         };
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !editModal.classList.contains('hidden')) {
+                document.getElementById('closeEditModalBtn').click();
+            }
+        });
 
         document.getElementById('clearEditsBtn').onclick = () => {
             if(confirm("確定要清除這頁的所有手動修改嗎？")) {
@@ -745,16 +753,42 @@
             html.classList.add('dark');
         }
 
+        function updateThemeControl() {
+            const isDark = html.classList.contains('dark');
+            document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+            document.getElementById('darkModeToggle').setAttribute('aria-label', isDark ? '切換為淺色模式' : '切換為深色模式');
+        }
+        updateThemeControl();
+
         document.getElementById('darkModeToggle').addEventListener('click', () => {
             html.classList.toggle('dark');
             localStorage.theme = html.classList.contains('dark') ? 'dark' : 'light';
+            updateThemeControl();
         });
 
-        uploadSection.addEventListener('click', () => pdfInput.click());
-        uploadSection.addEventListener('dragover', (e) => { e.preventDefault(); });
+        uploadSection.addEventListener('click', () => { if (!isLoadingPdf) pdfInput.click(); });
+        uploadSection.addEventListener('keydown', (e) => {
+            if (!isLoadingPdf && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                pdfInput.click();
+            }
+        });
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+        });
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+        });
         uploadSection.addEventListener('drop', (e) => {
             e.preventDefault();
+            uploadSection.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
             if (e.dataTransfer.files.length > 0) {
+                const droppedFiles = Array.from(e.dataTransfer.files);
+                if (!droppedFiles.every(file => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'))) {
+                    alert('請只拖曳 PDF 檔案。');
+                    return;
+                }
                 pdfInput.files = e.dataTransfer.files;
                 handleFilesSelected();
             }
@@ -762,14 +796,29 @@
         pdfInput.addEventListener('change', () => { if (pdfInput.files.length > 0) handleFilesSelected(); });
 
         async function handleFilesSelected() {
+            if (isLoadingPdf) return;
+            const selectedFiles = Array.from(pdfInput.files);
+            if (!selectedFiles.length) return;
+            if (!selectedFiles.every(file => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'))) {
+                alert('請只選取 PDF 檔案。');
+                pdfInput.value = '';
+                return;
+            }
+            const selectedTotalBytes = selectedFiles.reduce((total, file) => total + file.size, 0);
+            if (selectedTotalBytes > 250 * 1024 * 1024 && !confirm('選取的 PDF 總大小超過 250 MB，瀏覽器可能因記憶體不足而失敗。仍要繼續嗎？')) {
+                pdfInput.value = '';
+                return;
+            }
             document.getElementById('loadingOverlay').classList.remove('hidden');
             document.getElementById('loadingOverlay').classList.add('flex');
             document.getElementById('loadingStatusText').textContent = '正在讀取與整理 PDF...';
+            isLoadingPdf = true;
+            uploadSection.setAttribute('aria-disabled', 'true');
 
             try {
                 const mergedPdf = await PDFLib.PDFDocument.create();
                 let outputFileName = pdfInput.files.length > 1 ? "Merged_" + pdfInput.files[0].name : pdfInput.files[0].name;
-                sourceFileSize = Array.from(pdfInput.files).reduce((total, file) => total + file.size, 0);
+                sourceFileSize = selectedTotalBytes;
                 const suggestedTargetMb = Math.max(0.1, (sourceFileSize * 0.7) / (1024 * 1024));
                 document.getElementById('targetSizeMb').value = suggestedTargetMb.toFixed(suggestedTargetMb < 1 ? 2 : 1);
                 document.getElementById('strongSourceSize').textContent = `目前檔案 ${formatBytes(sourceFileSize)}；已先帶入約縮小 30% 的建議目標。`;
@@ -800,8 +849,11 @@
                 workspaceSection.classList.remove('hidden');
                 workspaceSection.classList.add('flex');
             } catch (error) {
-                alert("處理檔案發生錯誤，請確認檔案是否有加密。");
+                console.error(error);
+                alert("處理檔案發生錯誤。檔案可能已加密、損毀，或超出瀏覽器可用記憶體。");
             } finally {
+                isLoadingPdf = false;
+                uploadSection.removeAttribute('aria-disabled');
                 document.getElementById('loadingOverlay').classList.add('hidden');
                 document.getElementById('loadingOverlay').classList.remove('flex');
             }
@@ -821,8 +873,9 @@
                 
                 const checkbox = document.createElement('input');
                 checkbox.type = "checkbox";
-                checkbox.className = "hidden page-checkbox";
+                checkbox.className = "page-checkbox absolute top-2 left-2 z-20 w-5 h-5 accent-blue-600 cursor-pointer";
                 checkbox.value = pageIndex;
+                checkbox.setAttribute('aria-label', `選取第 ${pageNum} 頁`);
                 checkbox.onchange = (e) => {
                     e.target.checked ? selectedPages.add(pageIndex) : selectedPages.delete(pageIndex);
                     downloadSelectedBtn.classList.toggle('hidden', selectedPages.size === 0);
@@ -839,7 +892,8 @@
                 canvas.className = "max-w-full max-h-full transition-transform duration-300";
                 
                 const editBtn = document.createElement('button');
-                editBtn.className = "absolute top-2 right-10 p-1.5 bg-blue-50 text-blue-600 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-blue-100 border border-blue-200 flex items-center justify-center";
+                editBtn.type = 'button';
+                editBtn.className = "absolute top-2 right-10 p-1.5 bg-blue-50 text-blue-600 rounded shadow opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 transition-opacity z-10 hover:bg-blue-100 border border-blue-200 flex items-center justify-center";
                 editBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>';
                 editBtn.title = "進入單頁進階編輯 (立可白/新增文字)";
                 editBtn.onclick = async (e) => { 
@@ -858,7 +912,10 @@
                 };
 
                 const rotateBtn = document.createElement('button');
-                rotateBtn.className = "absolute top-2 right-2 p-1.5 bg-white/90 text-gray-700 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-gray-100 border border-gray-200 flex items-center justify-center";
+                rotateBtn.type = 'button';
+                rotateBtn.title = '順時針旋轉 90 度';
+                rotateBtn.setAttribute('aria-label', `旋轉第 ${pageNum} 頁`);
+                rotateBtn.className = "absolute top-2 right-2 p-1.5 bg-white/90 text-gray-700 rounded shadow opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 transition-opacity z-10 hover:bg-gray-100 border border-gray-200 flex items-center justify-center";
                 rotateBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>';
                 rotateBtn.onclick = (e) => { 
                     e.preventDefault(); 
@@ -868,7 +925,7 @@
 
                 let editBadge = '';
                 if (pageEdits[pageIndex] && pageEdits[pageIndex].length > 0) {
-                    editBadge = '<span class="absolute top-2 left-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded shadow z-10">已編輯</span> ';
+                    editBadge = '<span class="absolute top-9 left-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded shadow z-10">已編輯</span> ';
                 }
 
                 const pageLabel = document.createElement('div');
@@ -927,6 +984,7 @@
         };
 
         const enableStrongCompressCb = document.getElementById('enableStrongCompressCb');
+        const enableCompressCb = document.getElementById('enableCompressCb');
         const strongCompressControls = document.getElementById('strongCompressControls');
 
         document.querySelectorAll('.target-size-preset').forEach(button => {
@@ -945,6 +1003,13 @@
                 document.getElementById('compressResult').textContent = '強力瘦身已關閉，不會將頁面轉成圖片。';
             }
         };
+
+        enableCompressCb.addEventListener('change', (e) => {
+            if (e.target.checked && enableStrongCompressCb.checked) {
+                enableStrongCompressCb.checked = false;
+                strongCompressControls.classList.add('opacity-50', 'pointer-events-none');
+            }
+        });
 
         document.getElementById('sigUploadBtn').onclick = () => document.getElementById('sigInput').click();
         document.getElementById('sigInput').onchange = (e) => {
@@ -972,9 +1037,12 @@
 
         function processSignatureBackground() {
             const threshold = parseInt(document.getElementById('sigTolerance').value);
-            sigCanvas.width = originalSigImage.width;
-            sigCanvas.height = originalSigImage.height;
-            sigCtx.drawImage(originalSigImage, 0, 0);
+            const maxDimension = 2000;
+            const scale = Math.min(1, maxDimension / Math.max(originalSigImage.width, originalSigImage.height));
+            sigCanvas.width = Math.max(1, Math.round(originalSigImage.width * scale));
+            sigCanvas.height = Math.max(1, Math.round(originalSigImage.height * scale));
+            sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+            sigCtx.drawImage(originalSigImage, 0, 0, sigCanvas.width, sigCanvas.height);
             const imgData = sigCtx.getImageData(0, 0, sigCanvas.width, sigCanvas.height);
             const data = imgData.data;
             for (let i = 0; i < data.length; i += 4) {
@@ -1055,14 +1123,15 @@
 
                 if (wmFont) {
                     const text = document.getElementById('wmText').value;
-                    const size = parseInt(document.getElementById('wmSize').value);
+                    const size = Math.min(500, Math.max(6, parseFloat(document.getElementById('wmSize').value) || 60));
+                    const opacity = Math.min(1, Math.max(0.05, parseFloat(document.getElementById('wmOpacity').value) || 0.3));
                     const textWidth = wmFont.widthOfTextAtSize(text, size);
                     const textHeight = wmFont.heightAtSize(size);
                     page.drawText(text, {
                         x: effectiveWidth / 2 - textWidth / 2 + (textHeight/2), 
                         y: effectiveHeight / 2 - textHeight / 2,
                         size: size, font: wmFont, color: PDFLib.rgb(0.6, 0.6, 0.6), 
-                        opacity: parseFloat(document.getElementById('wmOpacity').value),
+                        opacity: opacity,
                         rotate: PDFLib.degrees(45),
                     });
                 }
@@ -1079,7 +1148,7 @@
                         if (pos === 'tr') { x = effectiveWidth - sigDims.width - margin; y = effectiveHeight - sigDims.height - margin; }
                         if (pos === 'tl') { x = margin; y = effectiveHeight - sigDims.height - margin; }
 
-                        page.drawImage({ image: embedSigImg, x: x, y: y, width: sigDims.width, height: sigDims.height });
+                        page.drawImage(embedSigImg, { x: x, y: y, width: sigDims.width, height: sigDims.height });
                     }
                 }
 
@@ -1093,6 +1162,7 @@
             });
             let pdfBytes = uncompressedBytes;
             let compressionPrefix = '';
+            let strongTargetBytes = null;
             const useStrongCompression = document.getElementById('enableStrongCompressCb').checked;
 
             if (useStrongCompression) {
@@ -1103,6 +1173,10 @@
                     return;
                 }
                 const targetBytes = Math.round(targetSizeMb * 1024 * 1024);
+                strongTargetBytes = targetBytes;
+                const compressionTargetBytes = document.getElementById('enableEncryptCb').checked
+                    ? Math.floor(targetBytes * 0.98)
+                    : targetBytes;
                 const renderSourceBytes = await exportPdf.save({
                     useObjectStreams: true,
                     addDefaultPage: false,
@@ -1112,7 +1186,7 @@
                 const startingQuality = parseFloat(document.getElementById('strongCompressQuality').value);
                 const compressionResult = await compressPdfToTarget(
                     renderSourceBytes,
-                    targetBytes,
+                    compressionTargetBytes,
                     maxDpi,
                     startingQuality
                 );
@@ -1122,7 +1196,7 @@
                     : 0;
                 const savedPercent = formatCompressionPercent(savedRatio);
 
-                if (!compressionResult.reached) {
+                if (rasterizedBytes.length > targetBytes) {
                     document.getElementById('compressResult').innerHTML = `⛔ 最低只能壓到 <strong>${formatBytes(rasterizedBytes.length)}</strong>，無法達到 ${formatBytes(targetBytes)}，因此未提供下載。`;
                     alert(`目前最低只能壓到 ${formatBytes(rasterizedBytes.length)}，仍無法達到 ${formatBytes(targetBytes)} 的目標，因此不會下載檔案。`);
                     return;
@@ -1168,7 +1242,8 @@
             if (document.getElementById('enableEncryptCb').checked) {
                 const password = document.getElementById('pdfPassword').value;
                 if (!password) {
-                    alert("⚠️ 提示：您開啟了安全加密開關，但未輸入任何密碼，將以未加密狀態匯出。");
+                    alert("已開啟安全加密，但尚未輸入密碼，因此本次不會下載檔案。");
+                    return;
                 } else {
                     try {
                         // 使用 ESM 動態引入，避免破壞全域作用域與初始載入速度
@@ -1181,9 +1256,16 @@
                         pdfBytes = new Uint8Array(encryptedBytes);
                     } catch (err) {
                         console.error(err);
-                        alert("❌ 執行前端加密時發生錯誤，請確認網路連線是否正常。本次將改為普通不加密導出。");
+                        alert("執行前端加密時發生錯誤。為避免意外輸出未加密檔案，本次不會下載。");
+                        return;
                     }
                 }
+            }
+
+            if (strongTargetBytes && pdfBytes.length > strongTargetBytes) {
+                document.getElementById('compressResult').innerHTML = `⛔ 最終檔案為 <strong>${formatBytes(pdfBytes.length)}</strong>，超過 ${formatBytes(strongTargetBytes)} 目標，因此未提供下載。`;
+                alert(`加入加密資訊後檔案大小為 ${formatBytes(pdfBytes.length)}，超過目標，因此不會下載。請稍微降低目標大小後再試一次。`);
+                return;
             }
 
             const blob = new Blob([pdfBytes], { type: "application/pdf" });
@@ -1199,20 +1281,38 @@
 
         downloadAllBtn.onclick = async () => {
             downloadAllBtn.textContent = "處理中...";
+            downloadAllBtn.disabled = true;
+            downloadAllBtn.classList.add('opacity-60', 'cursor-wait');
             try {
                 const checkboxes = thumbnailsContainer.querySelectorAll('.page-checkbox');
                 const currentOrderIndices = Array.from(checkboxes).map(cb => parseInt(cb.value));
                 await exportProcessedPdf(currentOrderIndices, "Processed_");
-            } finally { downloadAllBtn.textContent = "套用並匯出 PDF"; }
+            } catch (error) {
+                console.error(error);
+                alert('匯出 PDF 時發生錯誤，請調低壓縮強度或減少頁數後再試。');
+            } finally {
+                downloadAllBtn.textContent = "套用並匯出 PDF";
+                downloadAllBtn.disabled = false;
+                downloadAllBtn.classList.remove('opacity-60', 'cursor-wait');
+            }
         };
 
         downloadSelectedBtn.onclick = async () => {
             downloadSelectedBtn.textContent = "處理中...";
+            downloadSelectedBtn.disabled = true;
+            downloadSelectedBtn.classList.add('opacity-60', 'cursor-wait');
             try {
                 const checkedBoxes = thumbnailsContainer.querySelectorAll('.page-checkbox:checked');
                 const selectedOrderIndices = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
                 await exportProcessedPdf(selectedOrderIndices, "Extracted_");
-            } finally { downloadSelectedBtn.textContent = `匯出選取的 ${selectedPages.size} 頁`; }
+            } catch (error) {
+                console.error(error);
+                alert('匯出選取頁面時發生錯誤。');
+            } finally {
+                downloadSelectedBtn.textContent = `匯出選取的 ${selectedPages.size} 頁`;
+                downloadSelectedBtn.disabled = false;
+                downloadSelectedBtn.classList.remove('opacity-60', 'cursor-wait');
+            }
         };
 
         document.getElementById('resetBtn').onclick = () => { location.reload(); }; 
