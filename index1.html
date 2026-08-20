@@ -120,10 +120,14 @@
     .icon-btn { width: 48px; height: 48px; border-radius: 14px; background: var(--accent); color: #04151a; font-size: 24px; font-weight: 500; }
     .hint { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
     .options { display: grid; gap: 8px; max-height: 278px; overflow: auto; padding-right: 3px; }
-    .option { display: grid; grid-template-columns: 28px 1fr 34px; gap: 8px; align-items: center; min-height: 46px; padding: 6px 6px 6px 10px; border: 1px solid transparent; border-radius: 13px; background: rgba(255,255,255,.035); }
+    .option { display: grid; grid-template-columns: 28px minmax(0,1fr) auto 34px; gap: 7px; align-items: center; min-height: 50px; padding: 6px 6px 6px 10px; border: 1px solid transparent; border-radius: 13px; background: rgba(255,255,255,.035); }
     .option.used { opacity: .42; }
     .dot { width: 10px; height: 10px; border-radius: 50%; justify-self: center; box-shadow: 0 0 12px currentColor; }
     .option input { width: 100%; color: var(--text); background: transparent; border: 0; outline: 0; min-width: 0; }
+    .weight-control { height:34px; display:flex; align-items:center; gap:5px; padding:0 7px; border:1px solid var(--line); border-radius:9px; background:rgba(3,10,20,.36); color:var(--muted); }
+    .weight-control span { font-size:9px; font-weight:700; }
+    .weight-control input { width:42px; text-align:center; color:var(--accent); font-size:12px; font-weight:850; appearance:textfield; }
+    .weight-control input::-webkit-inner-spin-button, .weight-control input::-webkit-outer-spin-button { margin:0; opacity:.55; }
     .remove { width: 32px; height: 32px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); cursor: pointer; font-size: 18px; }
     .remove:hover { color: var(--danger); background: rgba(255,118,146,.1); }
     .empty { padding: 24px 14px; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); text-align: center; font-size: 13px; }
@@ -197,6 +201,10 @@
       .setup { padding: 18px; }
       .wheel-panel { padding-inline: 8px; }
       .hub { width: 88px; height: 88px; border-width: 6px; font-size: 12px; }
+      .option { grid-template-columns:20px minmax(0,1fr) auto 30px; gap:5px; padding-left:6px; }
+      .weight-control { padding:0 4px; }
+      .weight-control span { display:none; }
+      .weight-control input { width:35px; }
       .result-actions { grid-template-columns: 1fr; }
       .settings { align-items: flex-start; }
     }
@@ -342,14 +350,22 @@
       let pointerSpringVelocity = 0;
 
       function uid() { return `${Date.now().toString(36)}${Math.random().toString(36).slice(2,7)}`; }
-      function fresh() { return { topic: '', options: DEFAULTS.map(text => ({ id: uid(), text, used: false })), noRepeat: false, history: [], presets: [], activePresetId: null, style: 'deep' }; }
+      function normalizeWeight(value) { const number=Math.floor(Number(value)); return Number.isFinite(number) && number>0 ? Math.min(number,9999) : 1; }
+      function normalizeOption(option) {
+        if (typeof option === 'string') return {id:uid(),text:option,weight:1,used:false};
+        return {id:option.id||uid(),text:String(option.text||''),weight:normalizeWeight(option.weight),used:!!option.used};
+      }
+      function normalizePreset(preset) {
+        return {...preset,id:preset.id||uid(),topic:String(preset.topic||''),options:(Array.isArray(preset.options)?preset.options:[]).map(option=>typeof option==='string'?{text:option,weight:1}:{text:String(option.text||''),weight:normalizeWeight(option.weight)})};
+      }
+      function fresh() { return { topic: '', options: DEFAULTS.map(text => ({ id: uid(), text, weight: 1, used: false })), noRepeat: false, history: [], presets: [], activePresetId: null, style: 'deep' }; }
       function load() {
         try {
           const value = JSON.parse(localStorage.getItem('choice-decider-v1'));
           if (value && Array.isArray(value.options)) return {
-            topic: value.topic || '', options: value.options, noRepeat: !!value.noRepeat,
+            topic: value.topic || '', options: value.options.map(normalizeOption), noRepeat: !!value.noRepeat,
             history: Array.isArray(value.history) ? value.history.slice(0, 12) : [],
-            presets: Array.isArray(value.presets) ? value.presets : [],
+            presets: Array.isArray(value.presets) ? value.presets.map(normalizePreset) : [],
             activePresetId: value.activePresetId || null,
             style: STYLES.includes(value.style) ? value.style : 'deep'
           };
@@ -361,7 +377,7 @@
         const preset = state.presets.find(item => item.id === state.activePresetId);
         if (!preset) { state.activePresetId = null; return; }
         preset.topic = state.topic.replace(/\s+/g,' ').trim().slice(0,80);
-        preset.options = state.options.map(option => cleanText(option.text)).filter(Boolean);
+        preset.options = state.options.map(option => ({text:cleanText(option.text),weight:normalizeWeight(option.weight)})).filter(option=>option.text);
         preset.updatedAt = Date.now();
       }
       function save() { syncActivePreset(); localStorage.setItem('choice-decider-v1', JSON.stringify(state)); renderPresets(); }
@@ -391,11 +407,20 @@
           state.options.forEach((option, index) => {
             const row = document.createElement('div');
             row.className = `option${option.used ? ' used' : ''}`;
-            row.innerHTML = `<span class="dot" style="color:${COLORS[index % COLORS.length]};background:currentColor"></span><input aria-label="選項 ${index + 1}" maxlength="60"><button class="remove" type="button" aria-label="刪除 ${escapeHtml(option.text)}">×</button>`;
-            const input = row.querySelector('input');
+            row.innerHTML = `<span class="dot" style="color:${COLORS[index % COLORS.length]};background:currentColor"></span><input class="option-text" aria-label="選項 ${index + 1}" maxlength="60"><label class="weight-control"><span>權重</span><input class="weight-input" type="number" min="1" max="9999" step="1" inputmode="numeric" aria-label="選項 ${index + 1} 權重"></label><button class="remove" type="button" aria-label="刪除 ${escapeHtml(option.text)}">×</button>`;
+            const input = row.querySelector('.option-text');
             input.value = option.text;
             input.addEventListener('input', e => { option.text = e.target.value; save(); draw(); updateAvailability(); });
             input.addEventListener('blur', e => { option.text = cleanText(e.target.value); render(); save(); });
+            const weightInput=row.querySelector('.weight-input');
+            weightInput.value=normalizeWeight(option.weight);
+            weightInput.addEventListener('keydown',e=>{if(['e','E','+','-','.',','].includes(e.key))e.preventDefault();});
+            weightInput.addEventListener('input',e=>{
+              if(e.target.value==='') return;
+              option.weight=normalizeWeight(e.target.value); e.target.value=option.weight;
+              save(); draw();
+            });
+            weightInput.addEventListener('blur',e=>{option.weight=normalizeWeight(e.target.value);e.target.value=option.weight;save();draw();});
             row.querySelector('.remove').addEventListener('click', () => removeOption(option.id));
             els.list.appendChild(row);
           });
@@ -418,7 +443,7 @@
         let added = 0;
         for (const text of values) {
           if (!existing.has(text.toLocaleLowerCase())) {
-            state.options.push({ id: uid(), text, used: false });
+            state.options.push({ id: uid(), text, weight: 1, used: false });
             existing.add(text.toLocaleLowerCase());
             added++;
           }
@@ -450,7 +475,7 @@
       function saveCurrentPreset() {
         if (state.activePresetId) { save(); showToast('這組題目已是自動儲存狀態'); return; }
         const topic = state.topic.replace(/\s+/g,' ').trim();
-        const options = state.options.map(option => cleanText(option.text)).filter(Boolean);
+        const options = state.options.map(option => ({text:cleanText(option.text),weight:normalizeWeight(option.weight)})).filter(option=>option.text);
         if (!topic) { showToast('請先輸入要決定的問題'); els.topic.focus(); return; }
         if (distinctCount(state.options.filter(o=>o.text.trim())) < 2) { showToast('請先加入至少 2 個不同選項'); els.option.focus(); return; }
         const preset = { id: uid(), topic, options, updatedAt: Date.now() };
@@ -462,7 +487,7 @@
         const preset = state.presets.find(item => item.id === id);
         if (!preset) return;
         state.activePresetId = id; state.topic = preset.topic;
-        state.options = preset.options.map(text => ({id:uid(),text,used:false}));
+        state.options = preset.options.map(option => ({id:uid(),text:option.text,weight:normalizeWeight(option.weight),used:false}));
         rotation = 0; save(); render(); showToast(`已切換至「${preset.topic}」`);
       }
       function newPreset() {
@@ -506,19 +531,26 @@
           ctx.fillStyle = '#7387a4'; ctx.font = '600 27px Microsoft JhengHei, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('等待選項', 0, -150);
           ctx.restore(); return;
         }
-        const slice = Math.PI * 2 / options.length;
+        const totalWeight = options.reduce((sum,option)=>sum+normalizeWeight(option.weight),0);
+        let cursor = rotation - Math.PI/2;
         options.forEach((option, i) => {
-          const start = rotation + i * slice - Math.PI / 2;
-          ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,radius,start,start+slice); ctx.closePath();
+          const segment = Math.PI*2*normalizeWeight(option.weight)/totalWeight;
+          const start = cursor; cursor += segment;
+          ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,radius,start,start+segment); ctx.closePath();
           const grad = ctx.createRadialGradient(0,0,40,0,0,radius);
           grad.addColorStop(0, shade(COLORS[i % COLORS.length], -.16)); grad.addColorStop(1, COLORS[i % COLORS.length]);
           ctx.fillStyle = grad; ctx.fill(); ctx.strokeStyle = 'rgba(5,15,27,.46)'; ctx.lineWidth = 5; ctx.stroke();
-          ctx.save(); ctx.rotate(start + slice / 2); ctx.translate(radius * .64, 0); ctx.rotate(Math.PI / 2);
-          const maxChars = options.length > 10 ? 8 : options.length > 6 ? 11 : 15;
-          let text = option.text.length > maxChars ? option.text.slice(0, maxChars - 1) + '…' : option.text;
-          ctx.fillStyle = '#071521'; ctx.font = `800 ${options.length > 10 ? 20 : options.length > 6 ? 24 : 29}px Microsoft JhengHei, sans-serif`;
-          ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 0, 0, radius * .5);
-          ctx.restore();
+          if(segment>.055){
+            ctx.save(); ctx.rotate(start + segment / 2); ctx.translate(radius * .64, 0); ctx.rotate(Math.PI / 2);
+            const maxChars = segment < .18 ? 5 : segment < .35 ? 8 : options.length > 6 ? 11 : 15;
+            const text = option.text.length > maxChars ? option.text.slice(0, maxChars - 1) + '…' : option.text;
+            const fontSize = segment < .15 ? 16 : segment < .3 ? 20 : options.length > 6 ? 24 : 29;
+            const maxWidth=Math.max(40,Math.min(radius*.52,2*radius*.64*Math.sin(segment/2)*.84));
+            ctx.fillStyle = '#071521'; ctx.font = `800 ${fontSize}px Microsoft JhengHei, sans-serif`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 0, normalizeWeight(option.weight)>1?-9:0, maxWidth);
+            if(normalizeWeight(option.weight)>1 && segment>.13){ctx.font='800 15px Microsoft JhengHei, sans-serif';ctx.globalAlpha=.68;ctx.fillText(`權重 ×${normalizeWeight(option.weight)}`,0,18,maxWidth);}
+            ctx.restore();
+          }
         });
         ctx.beginPath(); ctx.arc(0,0,radius,0,Math.PI*2); ctx.strokeStyle = 'rgba(225,255,251,.75)'; ctx.lineWidth = 7; ctx.stroke();
         for (let i=0; i<PEG_COUNT; i++) {
@@ -544,6 +576,15 @@
       function easeInOutCubic(t) { return t < .5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
       function mod(value, divisor) { return ((value % divisor) + divisor) % divisor; }
       function normalizeAngle(angle) { return mod(angle + Math.PI, Math.PI * 2) - Math.PI; }
+      function weightedIndexAtPointer(options) {
+        const total=options.reduce((sum,option)=>sum+normalizeWeight(option.weight),0);
+        const position=mod(-rotation,Math.PI*2); let cursor=0;
+        for(let index=0;index<options.length;index++){
+          cursor+=Math.PI*2*normalizeWeight(options[index].weight)/total;
+          if(position<cursor || index===options.length-1) return index;
+        }
+        return 0;
+      }
 
       function hasValidPool() {
         const available = activeOptions();
@@ -640,7 +681,6 @@
         animationId = requestAnimationFrame(coast);
       }
       function settleAtPeg(options, direction) {
-        const optionSlice = Math.PI*2/options.length;
         const boundary = direction > 0
           ? Math.ceil((rotation+1e-7)/PEG_STEP)*PEG_STEP
           : Math.floor((rotation-1e-7)/PEG_STEP)*PEG_STEP;
@@ -667,7 +707,7 @@
           if (t < 1) animationId = requestAnimationFrame(suspense);
           else {
             rotation=finalRotation; draw();
-            const selectedIndex = Math.floor(mod(-rotation,Math.PI*2)/optionSlice) % options.length;
+            const selectedIndex = weightedIndexAtPointer(options);
             relaxPointer(()=>finishSpin(options[selectedIndex]));
           }
         }
