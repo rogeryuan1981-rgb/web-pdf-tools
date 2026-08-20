@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08111f">
+  <title>選擇困難抑制器</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07101e;
+      --panel: rgba(14, 27, 47, .74);
+      --panel-strong: #101f35;
+      --line: rgba(166, 199, 255, .14);
+      --text: #f3f7ff;
+      --muted: #92a4bf;
+      --accent: #68e8d5;
+      --accent-2: #7b8cff;
+      --danger: #ff7692;
+      --radius: 24px;
+      --shadow: 0 28px 80px rgba(0, 0, 0, .35);
+    }
+    * { box-sizing: border-box; }
+    html { min-width: 320px; background: var(--bg); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(104, 232, 213, .12), transparent 30rem),
+        radial-gradient(circle at 92% 18%, rgba(123, 140, 255, .16), transparent 34rem),
+        linear-gradient(160deg, #07101e 0%, #091426 48%, #060c16 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .18;
+      background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 38px 38px;
+      mask-image: linear-gradient(to bottom, black, transparent 80%);
+    }
+    button, input, textarea { font: inherit; }
+    button { color: inherit; }
+    .app { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 42px; position: relative; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: .02em; }
+    .brand-mark { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 10px 30px rgba(104,232,213,.2); color: #06111d; }
+    .privacy { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 13px; }
+    .privacy::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent); }
+    .hero { max-width: 760px; margin: 42px auto 34px; text-align: center; }
+    .eyebrow { color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+    h1 { margin: 12px 0 10px; font-size: clamp(36px, 6vw, 66px); line-height: 1.02; letter-spacing: -.055em; }
+    .hero p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.8; }
+    .grid { display: grid; grid-template-columns: minmax(300px, .88fr) minmax(430px, 1.12fr); gap: 20px; align-items: start; }
+    .panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow); backdrop-filter: blur(20px); }
+    .setup { padding: 24px; }
+    .panel-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
+    .panel-head h2 { font-size: 18px; margin: 0 0 5px; }
+    .panel-head p { margin: 0; color: var(--muted); font-size: 13px; }
+    .count { min-width: 40px; height: 26px; border-radius: 999px; display: grid; place-items: center; background: rgba(104,232,213,.1); color: var(--accent); font-weight: 800; font-size: 12px; }
+    label.field-label { display: block; margin: 0 0 8px; color: #c8d4e7; font-size: 13px; font-weight: 700; }
+    .text-input, textarea {
+      width: 100%; border: 1px solid var(--line); border-radius: 14px; background: rgba(4, 12, 24, .65); color: var(--text); outline: none; transition: .2s; resize: vertical;
+    }
+    .text-input { height: 48px; padding: 0 14px; }
+    textarea { min-height: 96px; padding: 13px 14px; line-height: 1.6; }
+    .text-input:focus, textarea:focus { border-color: rgba(104,232,213,.65); box-shadow: 0 0 0 4px rgba(104,232,213,.08); }
+    .field { margin-bottom: 20px; }
+    .add-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+    .icon-btn, .secondary, .primary, .ghost { border: 0; cursor: pointer; transition: transform .18s, background .18s, opacity .18s, border-color .18s; }
+    .icon-btn:hover, .secondary:hover, .primary:hover, .ghost:hover { transform: translateY(-1px); }
+    .icon-btn { width: 48px; height: 48px; border-radius: 14px; background: var(--accent); color: #04151a; font-size: 24px; font-weight: 500; }
+    .hint { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
+    .options { display: grid; gap: 8px; max-height: 278px; overflow: auto; padding-right: 3px; }
+    .option { display: grid; grid-template-columns: 28px 1fr 34px; gap: 8px; align-items: center; min-height: 46px; padding: 6px 6px 6px 10px; border: 1px solid transparent; border-radius: 13px; background: rgba(255,255,255,.035); }
+    .option.used { opacity: .42; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; justify-self: center; box-shadow: 0 0 12px currentColor; }
+    .option input { width: 100%; color: var(--text); background: transparent; border: 0; outline: 0; min-width: 0; }
+    .remove { width: 32px; height: 32px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); cursor: pointer; font-size: 18px; }
+    .remove:hover { color: var(--danger); background: rgba(255,118,146,.1); }
+    .empty { padding: 24px 14px; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); text-align: center; font-size: 13px; }
+    .settings { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 18px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .switch-label { display: flex; gap: 10px; align-items: center; cursor: pointer; font-size: 13px; color: #cbd7e8; }
+    .switch-label input { position: absolute; opacity: 0; }
+    .switch { width: 42px; height: 24px; border-radius: 999px; padding: 3px; background: #263750; transition: .2s; }
+    .switch::after { content: ""; display: block; width: 18px; height: 18px; border-radius: 50%; background: white; transition: .2s; }
+    .switch-label input:checked + .switch { background: var(--accent); }
+    .switch-label input:checked + .switch::after { transform: translateX(18px); background: #07131c; }
+    .ghost { padding: 8px 10px; border-radius: 10px; background: transparent; color: var(--muted); font-size: 12px; }
+    .ghost:hover { background: rgba(255,255,255,.06); color: var(--text); }
+    .wheel-panel { padding: 24px; min-height: 620px; display: grid; place-items: center; position: sticky; top: 20px; overflow: hidden; }
+    .topic { position: absolute; top: 24px; left: 24px; right: 24px; text-align: center; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .topic strong { color: var(--text); font-weight: 700; }
+    .wheel-wrap { width: min(500px, 100%); aspect-ratio: 1; position: relative; margin-top: 20px; filter: drop-shadow(0 28px 38px rgba(0,0,0,.4)); }
+    canvas { width: 100%; height: 100%; display: block; }
+    .pointer { position: absolute; z-index: 3; left: 50%; top: -4px; transform: translateX(-50%); width: 38px; height: 48px; filter: drop-shadow(0 6px 7px rgba(0,0,0,.45)); }
+    .pointer::before { content: ""; position: absolute; inset: 0; background: var(--text); clip-path: polygon(50% 100%, 2% 0, 98% 0); border-radius: 8px; }
+    .spin { position: absolute; z-index: 2; inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: 118px; height: 118px; border-radius: 50%; border: 8px solid rgba(4,13,24,.84); background: linear-gradient(145deg, #fbffff, #bfeee8); color: #071522; font-weight: 900; letter-spacing: .12em; cursor: pointer; box-shadow: 0 12px 28px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.8); transition: transform .2s, opacity .2s; }
+    .spin:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.045); }
+    .spin:active:not(:disabled) { transform: translate(-50%, -50%) scale(.98); }
+    .spin:disabled { cursor: not-allowed; opacity: .58; }
+    .spin small { display: block; margin-top: 3px; font-size: 9px; letter-spacing: .03em; color: #46606a; }
+    .wheel-help { position: absolute; bottom: 23px; color: var(--muted); font-size: 12px; }
+    .history-panel { margin-top: 20px; padding: 20px 24px; }
+    .history-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .history-head h2 { margin: 0; font-size: 16px; }
+    .history-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .history-item { display: flex; align-items: center; gap: 8px; padding: 8px 11px; border-radius: 999px; background: rgba(255,255,255,.045); color: #d6e1ef; font-size: 12px; }
+    .history-item time { color: var(--muted); }
+    .result-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(1,6,13,.72); backdrop-filter: blur(16px); opacity: 0; visibility: hidden; transition: .25s; }
+    .result-backdrop.show { opacity: 1; visibility: visible; }
+    .result-card { width: min(460px, 100%); padding: 34px; border: 1px solid rgba(104,232,213,.26); border-radius: 28px; text-align: center; background: linear-gradient(160deg, #142842, #0a1728); box-shadow: 0 30px 90px rgba(0,0,0,.6); transform: translateY(16px) scale(.96); transition: .3s; }
+    .show .result-card { transform: none; }
+    .result-icon { width: 58px; height: 58px; margin: 0 auto 18px; display: grid; place-items: center; border-radius: 18px; background: rgba(104,232,213,.12); color: var(--accent); font-size: 28px; }
+    .result-card p { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
+    .result-card h2 { margin: 0; font-size: clamp(28px, 7vw, 44px); line-height: 1.2; overflow-wrap: anywhere; }
+    .result-actions { display: grid; grid-template-columns: 1fr 1.3fr; gap: 10px; margin-top: 28px; }
+    .secondary, .primary { min-height: 48px; border-radius: 14px; font-weight: 800; }
+    .secondary { background: rgba(255,255,255,.07); border: 1px solid var(--line); }
+    .primary { background: linear-gradient(135deg, var(--accent), #8cf0ba); color: #06151a; }
+    .toast { position: fixed; z-index: 30; left: 50%; bottom: 28px; transform: translate(-50%, 16px); padding: 11px 16px; border-radius: 12px; background: #eefdfb; color: #0a1b26; font-size: 13px; font-weight: 700; box-shadow: 0 15px 40px rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: .2s; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .confetti { position: fixed; z-index: 25; width: 8px; height: 13px; border-radius: 2px; pointer-events: none; animation: fall 1.8s ease-in forwards; }
+    @keyframes fall { to { transform: translate(var(--drift), 105vh) rotate(720deg); opacity: .2; } }
+    @media (max-width: 860px) {
+      .app { width: min(100% - 20px, 640px); padding-top: 18px; }
+      header { margin-bottom: 10px; }
+      .hero { margin: 30px auto 24px; }
+      .grid { grid-template-columns: 1fr; }
+      .wheel-panel { min-height: auto; padding: 54px 18px 52px; position: relative; top: auto; }
+      .wheel-wrap { max-width: 480px; }
+    }
+    @media (max-width: 480px) {
+      .privacy span { display: none; }
+      .hero p { font-size: 14px; }
+      .setup { padding: 18px; }
+      .wheel-panel { padding-inline: 8px; }
+      .spin { width: 92px; height: 92px; border-width: 6px; font-size: 13px; }
+      .result-actions { grid-template-columns: 1fr; }
+      .settings { align-items: flex-start; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div class="brand"><span class="brand-mark" aria-hidden="true">⌁</span><span>選擇困難抑制器</span></div>
+      <div class="privacy"><span>本機運作・自動保存</span></div>
+    </header>
+
+    <section class="hero">
+      <div class="eyebrow">DECISION, SIMPLIFIED</div>
+      <h1>別再想了，轉吧。</h1>
+      <p>把候選項交給機率。你只需要決定，要不要接受答案。</p>
+    </section>
+
+    <section class="grid">
+      <div class="panel setup">
+        <div class="panel-head">
+          <div><h2>設定這次的選擇</h2><p>至少加入兩個不同選項</p></div>
+          <span class="count" id="optionCount">0</span>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="topicInput">你正在決定什麼？</label>
+          <input class="text-input" id="topicInput" maxlength="80" placeholder="例如：今天晚餐吃什麼？" autocomplete="off">
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="optionInput">加入選項</label>
+          <div class="add-row">
+            <input class="text-input" id="optionInput" maxlength="60" placeholder="輸入後按 Enter" autocomplete="off">
+            <button class="icon-btn" id="addButton" type="button" aria-label="加入選項">＋</button>
+          </div>
+          <p class="hint">可貼上多行文字，一行會成為一個選項</p>
+        </div>
+
+        <div class="options" id="optionList" aria-live="polite"></div>
+
+        <div class="settings">
+          <label class="switch-label">
+            <input id="noRepeat" type="checkbox">
+            <span class="switch" aria-hidden="true"></span>
+            <span>本輪不重複抽中</span>
+          </label>
+          <button class="ghost" id="resetUsed" type="button" hidden>恢復全部</button>
+          <button class="ghost" id="clearAll" type="button">清空</button>
+        </div>
+      </div>
+
+      <div class="panel wheel-panel">
+        <div class="topic" id="topicDisplay">等待你的選擇題</div>
+        <div class="wheel-wrap">
+          <div class="pointer" aria-hidden="true"></div>
+          <canvas id="wheel" width="900" height="900" aria-label="選項輪盤"></canvas>
+          <button class="spin" id="spinButton" type="button" disabled>開始轉動<small>SPACE</small></button>
+        </div>
+        <div class="wheel-help" id="wheelHelp">加入至少 2 個選項即可開始</div>
+      </div>
+    </section>
+
+    <section class="panel history-panel" id="historyPanel" hidden>
+      <div class="history-head"><h2>最近結果</h2><button class="ghost" id="clearHistory" type="button">清除紀錄</button></div>
+      <div class="history-list" id="historyList"></div>
+    </section>
+  </main>
+
+  <div class="result-backdrop" id="resultModal" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+    <div class="result-card">
+      <div class="result-icon" aria-hidden="true">✦</div>
+      <p id="resultTopic">命運替你選了</p>
+      <h2 id="resultTitle"></h2>
+      <div class="result-actions">
+        <button class="secondary" id="closeResult" type="button">接受結果</button>
+        <button class="primary" id="spinAgain" type="button">再轉一次</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    (() => {
+      'use strict';
+      const COLORS = ['#68e8d5','#7b8cff','#ff88b7','#ffbd69','#69b8ff','#9fe870','#cf8cff','#ff7d72','#48d7ff','#ffd85c'];
+      const DEFAULTS = ['第一個選項', '第二個選項', '第三個選項'];
+      const $ = id => document.getElementById(id);
+      const els = {
+        topic: $('topicInput'), option: $('optionInput'), add: $('addButton'), list: $('optionList'), count: $('optionCount'),
+        noRepeat: $('noRepeat'), resetUsed: $('resetUsed'), clearAll: $('clearAll'), canvas: $('wheel'), spin: $('spinButton'),
+        help: $('wheelHelp'), topicDisplay: $('topicDisplay'), modal: $('resultModal'), resultTitle: $('resultTitle'),
+        resultTopic: $('resultTopic'), closeResult: $('closeResult'), spinAgain: $('spinAgain'), toast: $('toast'),
+        historyPanel: $('historyPanel'), historyList: $('historyList'), clearHistory: $('clearHistory')
+      };
+      const ctx = els.canvas.getContext('2d');
+      let state = load();
+      let rotation = 0;
+      let spinning = false;
+      let animationId = 0;
+      let toastTimer = 0;
+
+      function uid() { return `${Date.now().toString(36)}${Math.random().toString(36).slice(2,7)}`; }
+      function fresh() { return { topic: '', options: DEFAULTS.map(text => ({ id: uid(), text, used: false })), noRepeat: false, history: [] }; }
+      function load() {
+        try {
+          const value = JSON.parse(localStorage.getItem('choice-decider-v1'));
+          if (value && Array.isArray(value.options)) return { topic: value.topic || '', options: value.options, noRepeat: !!value.noRepeat, history: Array.isArray(value.history) ? value.history.slice(0, 12) : [] };
+        } catch (_) {}
+        return fresh();
+      }
+      function save() { localStorage.setItem('choice-decider-v1', JSON.stringify(state)); }
+      function cleanText(value) { return value.replace(/\s+/g, ' ').trim().slice(0, 60); }
+      function activeOptions() { return state.options.filter(o => o.text.trim() && (!state.noRepeat || !o.used)); }
+      function distinctCount(options = activeOptions()) { return new Set(options.map(o => o.text.trim().toLocaleLowerCase())).size; }
+
+      function render() {
+        els.topic.value = state.topic;
+        els.noRepeat.checked = state.noRepeat;
+        els.count.textContent = state.options.length;
+        els.topicDisplay.innerHTML = state.topic ? `正在決定：<strong>${escapeHtml(state.topic)}</strong>` : '等待你的選擇題';
+        els.list.innerHTML = '';
+        if (!state.options.length) {
+          els.list.innerHTML = '<div class="empty">還沒有選項，先把腦中的候選答案放進來。</div>';
+        } else {
+          state.options.forEach((option, index) => {
+            const row = document.createElement('div');
+            row.className = `option${option.used ? ' used' : ''}`;
+            row.innerHTML = `<span class="dot" style="color:${COLORS[index % COLORS.length]};background:currentColor"></span><input aria-label="選項 ${index + 1}" maxlength="60"><button class="remove" type="button" aria-label="刪除 ${escapeHtml(option.text)}">×</button>`;
+            const input = row.querySelector('input');
+            input.value = option.text;
+            input.addEventListener('input', e => { option.text = e.target.value; save(); draw(); updateAvailability(); });
+            input.addEventListener('blur', e => { option.text = cleanText(e.target.value); render(); save(); });
+            row.querySelector('.remove').addEventListener('click', () => removeOption(option.id));
+            els.list.appendChild(row);
+          });
+        }
+        const usedCount = state.options.filter(o => o.used).length;
+        els.resetUsed.hidden = !state.noRepeat || usedCount === 0;
+        els.clearAll.hidden = state.options.length === 0;
+        renderHistory();
+        updateAvailability();
+        draw();
+      }
+
+      function addOptions(raw) {
+        const values = raw.split(/\r?\n/).map(cleanText).filter(Boolean);
+        if (!values.length) return;
+        const existing = new Set(state.options.map(o => o.text.toLocaleLowerCase()));
+        let added = 0;
+        for (const text of values) {
+          if (!existing.has(text.toLocaleLowerCase())) {
+            state.options.push({ id: uid(), text, used: false });
+            existing.add(text.toLocaleLowerCase());
+            added++;
+          }
+        }
+        els.option.value = '';
+        if (!added) showToast('相同的選項已經存在');
+        else if (values.length > 1) showToast(`已加入 ${added} 個選項`);
+        save(); render();
+      }
+      function removeOption(id) { state.options = state.options.filter(o => o.id !== id); save(); render(); }
+      function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+      function updateAvailability() {
+        const active = activeOptions();
+        const hasValidPool = state.noRepeat
+          ? distinctCount(state.options.filter(o => o.text.trim())) >= 2 && active.length >= 1
+          : distinctCount(active) >= 2;
+        const canSpin = hasValidPool && !spinning;
+        els.spin.disabled = !canSpin;
+        if (spinning) els.help.textContent = '正在替你排除猶豫…';
+        else if (state.noRepeat && active.length < 2 && state.options.length >= 2) els.help.textContent = '本輪已抽完，點「恢復全部」重新開始';
+        else if (distinctCount(active) < 2) els.help.textContent = '加入至少 2 個不同選項即可開始';
+        else els.help.textContent = `${active.length} 個候選項・每個機會相同`;
+      }
+
+      function draw() {
+        const options = activeOptions();
+        const { width: w, height: h } = els.canvas;
+        const cx = w / 2, cy = h / 2, radius = w * .47;
+        ctx.clearRect(0, 0, w, h);
+        ctx.save(); ctx.translate(cx, cy);
+        if (!options.length) {
+          ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fillStyle = '#14243a'; ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,.09)'; ctx.lineWidth = 4; ctx.stroke();
+          ctx.fillStyle = '#7387a4'; ctx.font = '600 27px Microsoft JhengHei, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('等待選項', 0, -150);
+          ctx.restore(); return;
+        }
+        const slice = Math.PI * 2 / options.length;
+        options.forEach((option, i) => {
+          const start = rotation + i * slice - Math.PI / 2;
+          ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,radius,start,start+slice); ctx.closePath();
+          const grad = ctx.createRadialGradient(0,0,40,0,0,radius);
+          grad.addColorStop(0, shade(COLORS[i % COLORS.length], -.16)); grad.addColorStop(1, COLORS[i % COLORS.length]);
+          ctx.fillStyle = grad; ctx.fill(); ctx.strokeStyle = 'rgba(5,15,27,.46)'; ctx.lineWidth = 5; ctx.stroke();
+          ctx.save(); ctx.rotate(start + slice / 2); ctx.translate(radius * .64, 0); ctx.rotate(Math.PI / 2);
+          const maxChars = options.length > 10 ? 8 : options.length > 6 ? 11 : 15;
+          let text = option.text.length > maxChars ? option.text.slice(0, maxChars - 1) + '…' : option.text;
+          ctx.fillStyle = '#071521'; ctx.font = `800 ${options.length > 10 ? 20 : options.length > 6 ? 24 : 29}px Microsoft JhengHei, sans-serif`;
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 0, 0, radius * .5);
+          ctx.restore();
+        });
+        ctx.beginPath(); ctx.arc(0,0,radius,0,Math.PI*2); ctx.strokeStyle = 'rgba(225,255,251,.75)'; ctx.lineWidth = 7; ctx.stroke();
+        ctx.restore();
+      }
+      function shade(hex, amount) {
+        const n = parseInt(hex.slice(1),16), clamp = v => Math.max(0,Math.min(255,v));
+        const r = clamp((n>>16) + 255*amount), g = clamp(((n>>8)&255) + 255*amount), b = clamp((n&255) + 255*amount);
+        return `rgb(${r},${g},${b})`;
+      }
+      function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
+
+      function spin() {
+        const available = activeOptions();
+        const hasValidPool = state.noRepeat
+          ? distinctCount(state.options.filter(o => o.text.trim())) >= 2 && available.length >= 1
+          : distinctCount(available) >= 2;
+        if (spinning || !hasValidPool) return;
+        closeModal();
+        const options = available;
+        const selectedIndex = Math.floor(Math.random() * options.length);
+        const slice = Math.PI * 2 / options.length;
+        const desired = -(selectedIndex + .5) * slice;
+        const currentNorm = ((rotation % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+        const desiredNorm = ((desired % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+        const extra = ((desiredNorm - currentNorm + Math.PI*2) % (Math.PI*2)) + Math.PI*2 * (5 + Math.floor(Math.random()*3));
+        const startRotation = rotation, endRotation = rotation + extra;
+        const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const duration = reduce ? 120 : 4400;
+        const start = performance.now();
+        spinning = true; updateAvailability();
+        function frame(now) {
+          const t = Math.min(1, (now-start)/duration);
+          rotation = startRotation + (endRotation-startRotation) * easeOutQuart(t);
+          draw();
+          if (t < 1) animationId = requestAnimationFrame(frame);
+          else finishSpin(options[selectedIndex]);
+        }
+        animationId = requestAnimationFrame(frame);
+      }
+      function finishSpin(selected) {
+        spinning = false;
+        if (state.noRepeat) {
+          const original = state.options.find(o => o.id === selected.id);
+          if (original) original.used = true;
+        }
+        state.history.unshift({ text: selected.text, topic: state.topic, time: Date.now() });
+        state.history = state.history.slice(0, 12);
+        save(); render();
+        els.resultTitle.textContent = selected.text;
+        els.resultTopic.textContent = state.topic || '命運替你選了';
+        els.modal.classList.add('show');
+        els.closeResult.focus();
+        celebrate();
+      }
+      function closeModal() { els.modal.classList.remove('show'); }
+      function renderHistory() {
+        els.historyPanel.hidden = !state.history.length;
+        els.historyList.innerHTML = state.history.map(item => `<div class="history-item"><span>${escapeHtml(item.text)}</span><time>${formatTime(item.time)}</time></div>`).join('');
+      }
+      function formatTime(timestamp) { return new Date(timestamp).toLocaleTimeString('zh-TW', { hour:'2-digit', minute:'2-digit' }); }
+      function showToast(message) { clearTimeout(toastTimer); els.toast.textContent = message; els.toast.classList.add('show'); toastTimer = setTimeout(() => els.toast.classList.remove('show'), 1800); }
+      function celebrate() {
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        for (let i=0;i<30;i++) {
+          const bit = document.createElement('i'); bit.className = 'confetti';
+          bit.style.left = `${35 + Math.random()*30}%`; bit.style.top = `${8 + Math.random()*12}%`;
+          bit.style.background = COLORS[i % COLORS.length]; bit.style.setProperty('--drift', `${(Math.random()-.5)*400}px`);
+          bit.style.animationDelay = `${Math.random()*.35}s`; document.body.appendChild(bit); setTimeout(()=>bit.remove(),2300);
+        }
+      }
+
+      els.add.addEventListener('click', () => addOptions(els.option.value));
+      els.option.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addOptions(els.option.value); } });
+      els.option.addEventListener('paste', e => { const text = e.clipboardData.getData('text'); if (/\r?\n/.test(text)) { e.preventDefault(); addOptions(text); } });
+      els.topic.addEventListener('input', e => { state.topic = e.target.value.slice(0,80); save(); els.topicDisplay.innerHTML = state.topic ? `正在決定：<strong>${escapeHtml(state.topic)}</strong>` : '等待你的選擇題'; });
+      els.noRepeat.addEventListener('change', e => { state.noRepeat = e.target.checked; if (!state.noRepeat) state.options.forEach(o => o.used=false); save(); render(); });
+      els.resetUsed.addEventListener('click', () => { state.options.forEach(o=>o.used=false); save(); render(); showToast('所有選項已恢復'); });
+      els.clearAll.addEventListener('click', () => { if (!state.options.length || confirm('要清除所有選項嗎？')) { state.options=[]; save(); render(); els.option.focus(); } });
+      els.clearHistory.addEventListener('click', () => { state.history=[]; save(); renderHistory(); });
+      els.spin.addEventListener('click', spin);
+      els.closeResult.addEventListener('click', closeModal);
+      els.spinAgain.addEventListener('click', () => { closeModal(); setTimeout(spin, 180); });
+      els.modal.addEventListener('click', e => { if (e.target === els.modal) closeModal(); });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeModal();
+        if (e.code === 'Space' && !['INPUT','TEXTAREA','BUTTON'].includes(document.activeElement.tagName)) { e.preventDefault(); spin(); }
+      });
+      window.addEventListener('resize', draw);
+      render();
+    })();
+  </script>
+</body>
+</html>
