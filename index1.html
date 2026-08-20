@@ -19,7 +19,14 @@
       --danger: #ff7692;
       --radius: 24px;
       --shadow: 0 28px 80px rgba(0, 0, 0, .35);
+      --scene: radial-gradient(circle at 12% 8%, rgba(104,232,213,.12), transparent 30rem), radial-gradient(circle at 92% 18%, rgba(123,140,255,.16), transparent 34rem), linear-gradient(160deg,#07101e 0%,#091426 48%,#060c16 100%);
+      --grid-opacity: .18;
     }
+    html[data-style="aurora"] { --bg:#071610; --panel:rgba(10,35,31,.76); --panel-strong:#102d29; --line:rgba(166,255,220,.15); --accent:#79f2b8; --accent-2:#a877ff; --scene:radial-gradient(ellipse at 18% 2%,rgba(83,255,187,.24),transparent 38rem),radial-gradient(ellipse at 83% 10%,rgba(168,119,255,.24),transparent 38rem),linear-gradient(155deg,#061510,#0b1d22 52%,#100c20); }
+    html[data-style="neon"] { --bg:#10091c; --panel:rgba(25,12,42,.78); --panel-strong:#25133c; --line:rgba(255,125,224,.17); --accent:#48f4ff; --accent-2:#ff58ca; --scene:linear-gradient(115deg,transparent 45%,rgba(255,55,196,.08) 45.5%,transparent 46%),radial-gradient(circle at 82% 16%,rgba(255,44,191,.28),transparent 28rem),radial-gradient(circle at 12% 72%,rgba(29,218,255,.2),transparent 34rem),linear-gradient(155deg,#080611,#170a26 48%,#070e1c); }
+    html[data-style="ember"] { --bg:#1a0e0b; --panel:rgba(45,23,19,.76); --panel-strong:#382019; --line:rgba(255,192,126,.16); --accent:#ffcb72; --accent-2:#ff7468; --scene:radial-gradient(circle at 14% 8%,rgba(255,181,79,.22),transparent 31rem),radial-gradient(circle at 90% 34%,rgba(255,79,94,.18),transparent 36rem),linear-gradient(150deg,#190d09,#25120f 48%,#0c0a11); }
+    html[data-style="ocean"] { --bg:#04131b; --panel:rgba(6,34,48,.76); --panel-strong:#0b2a3a; --line:rgba(114,220,255,.16); --accent:#56e6ff; --accent-2:#4c8fff; --scene:radial-gradient(ellipse at 50% -8%,rgba(61,211,255,.23),transparent 38rem),radial-gradient(circle at 6% 75%,rgba(37,113,255,.18),transparent 32rem),linear-gradient(175deg,#041721,#07121e 54%,#030a12); }
+    html[data-style="mono"] { --bg:#0c0e12; --panel:rgba(28,30,36,.78); --panel-strong:#24272e; --line:rgba(255,255,255,.12); --accent:#e8edf5; --accent-2:#8994a6; --scene:radial-gradient(circle at 50% 0,rgba(255,255,255,.1),transparent 33rem),linear-gradient(145deg,#0d0f13,#16191f 48%,#08090c); --grid-opacity:.1; }
     * { box-sizing: border-box; }
     html { min-width: 320px; background: var(--bg); }
     body {
@@ -27,10 +34,8 @@
       min-height: 100vh;
       color: var(--text);
       font-family: Inter, "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
-      background:
-        radial-gradient(circle at 12% 8%, rgba(104, 232, 213, .12), transparent 30rem),
-        radial-gradient(circle at 92% 18%, rgba(123, 140, 255, .16), transparent 34rem),
-        linear-gradient(160deg, #07101e 0%, #091426 48%, #060c16 100%);
+      background: var(--scene);
+      transition: background .45s ease;
       overflow-x: hidden;
     }
     body::before {
@@ -38,7 +43,7 @@
       position: fixed;
       inset: 0;
       pointer-events: none;
-      opacity: .18;
+      opacity: var(--grid-opacity);
       background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
       background-size: 38px 38px;
       mask-image: linear-gradient(to bottom, black, transparent 80%);
@@ -51,6 +56,28 @@
     .brand-mark { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 10px 30px rgba(104,232,213,.2); color: #06111d; }
     .privacy { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 13px; }
     .privacy::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent); }
+    .header-actions { display:flex; align-items:center; gap:12px; }
+    .style-control { position:relative; z-index:12; }
+    .style-toggle { height:38px; display:flex; align-items:center; gap:8px; padding:0 12px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.05); color:#dce6f5; cursor:pointer; }
+    .style-toggle:hover { background:rgba(255,255,255,.09); }
+    .style-orb { width:17px; height:17px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow:0 0 13px color-mix(in srgb,var(--accent) 55%,transparent); }
+    .style-picker { position:absolute; right:0; top:48px; width:330px; padding:14px; border:1px solid var(--line); border-radius:18px; background:rgba(8,17,31,.96); box-shadow:0 24px 70px rgba(0,0,0,.55); backdrop-filter:blur(24px); }
+    .style-picker[hidden] { display:none; }
+    .style-picker-head { display:flex; justify-content:space-between; align-items:center; margin:0 2px 11px; }
+    .style-picker-head strong { font-size:13px; }
+    .style-picker-head span { color:var(--muted); font-size:10px; }
+    .style-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .style-option { display:grid; grid-template-columns:42px 1fr; align-items:center; gap:9px; min-width:0; padding:7px; border:1px solid transparent; border-radius:12px; background:rgba(255,255,255,.035); color:#dce6f5; cursor:pointer; text-align:left; }
+    .style-option:hover { background:rgba(255,255,255,.075); }
+    .style-option.active { border-color:var(--accent); background:rgba(255,255,255,.08); }
+    .style-preview { width:42px; height:34px; border-radius:9px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.16); }
+    .style-preview.deep { background:radial-gradient(circle at 20% 20%,#3ddbc4,transparent 42%),linear-gradient(135deg,#07101e,#26366d); }
+    .style-preview.aurora { background:radial-gradient(circle at 20% 10%,#68f0aa,transparent 45%),linear-gradient(135deg,#071610,#6e45a7); }
+    .style-preview.neon { background:radial-gradient(circle at 80% 20%,#ff43c5,transparent 45%),linear-gradient(135deg,#0c0714,#076b82); }
+    .style-preview.ember { background:radial-gradient(circle at 18% 15%,#ffc35e,transparent 45%),linear-gradient(135deg,#180c09,#9a2938); }
+    .style-preview.ocean { background:radial-gradient(circle at 50% 0,#45daf2,transparent 45%),linear-gradient(150deg,#03131c,#173a86); }
+    .style-preview.mono { background:radial-gradient(circle at 50% 0,#8b9099,transparent 45%),linear-gradient(145deg,#08090b,#31353d); }
+    .style-name { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:11px; font-weight:750; }
     .hero { max-width: 760px; margin: 42px auto 34px; text-align: center; }
     .eyebrow { color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
     h1 { margin: 12px 0 10px; font-size: clamp(36px, 6vw, 66px); line-height: 1.02; letter-spacing: -.055em; }
@@ -112,11 +139,11 @@
     .wheel-panel { padding: 24px; min-height: 620px; display: grid; place-items: center; position: sticky; top: 20px; overflow: hidden; }
     .topic { position: absolute; top: 24px; left: 24px; right: 24px; text-align: center; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .topic strong { color: var(--text); font-weight: 700; }
-    .wheel-wrap { width: min(500px, 100%); aspect-ratio: 1; position: relative; margin-top: 20px; filter: drop-shadow(0 28px 38px rgba(0,0,0,.4)); cursor: grab; touch-action: none; user-select: none; }
+    .wheel-wrap { width: min(500px, 100%); aspect-ratio: 1; position: relative; margin-top: 42px; filter: drop-shadow(0 28px 38px rgba(0,0,0,.4)); cursor: grab; touch-action: none; user-select: none; }
     .wheel-wrap.dragging { cursor: grabbing; filter: drop-shadow(0 34px 44px rgba(0,0,0,.5)); }
     .wheel-wrap.disabled { cursor: not-allowed; opacity: .58; }
     canvas { width: 100%; height: 100%; display: block; }
-    .pointer { --pointer-angle: 0deg; position: absolute; z-index: 4; left: 50%; top: -15px; transform: translateX(-50%) rotate(var(--pointer-angle)); transform-origin: 50% 10px; width: 46px; height: 68px; filter: drop-shadow(0 8px 9px rgba(0,0,0,.55)); will-change: transform; pointer-events: none; }
+    .pointer { --pointer-angle: 0deg; position: absolute; z-index: 4; left: 50%; top: calc(4% - 68px); transform: translateX(-50%) rotate(var(--pointer-angle)); transform-origin: 50% 10px; width: 46px; height: 68px; filter: drop-shadow(0 8px 9px rgba(0,0,0,.55)); will-change: transform; pointer-events: none; }
     .pointer::before { content: ""; position: absolute; left: 8px; right: 8px; top: 11px; bottom: 0; background: linear-gradient(90deg, #a9bbc9, #ffffff 45%, #b8c9d4); clip-path: polygon(50% 100%, 4% 8%, 96% 8%); border-radius: 9px; }
     .pointer::after { content: ""; position: absolute; left: 50%; top: 0; width: 20px; height: 20px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(circle at 36% 32%, #fff, #8ea5b6 42%, #33485c 72%); border: 3px solid #dcebf2; box-shadow: 0 2px 0 #263b50, 0 0 0 4px rgba(7,17,30,.7); }
     .hub { position: absolute; z-index: 2; inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: 112px; height: 112px; border-radius: 50%; border: 8px solid rgba(4,13,24,.84); background: radial-gradient(circle at 38% 32%, #faffff, #9bdad2 52%, #43736f 100%); color: #071522; box-shadow: 0 12px 28px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.8); display: grid; place-items: center; text-align: center; font-weight: 900; letter-spacing: .1em; pointer-events: none; }
@@ -163,6 +190,9 @@
     }
     @media (max-width: 480px) {
       .privacy span { display: none; }
+      .style-toggle > span:last-child { display:none; }
+      .style-toggle { width:38px; padding:0; justify-content:center; }
+      .style-picker { position:fixed; top:72px; left:10px; right:10px; width:auto; }
       .hero p { font-size: 14px; }
       .setup { padding: 18px; }
       .wheel-panel { padding-inline: 8px; }
@@ -179,7 +209,23 @@
   <main class="app">
     <header>
       <div class="brand"><span class="brand-mark" aria-hidden="true">⌁</span><span>選擇困難抑制器</span></div>
-      <div class="privacy"><span>本機運作・自動保存</span></div>
+      <div class="header-actions">
+        <div class="privacy"><span>本機運作・自動保存</span></div>
+        <div class="style-control">
+          <button class="style-toggle" id="styleToggle" type="button" aria-label="背景風格" aria-expanded="false" aria-controls="stylePicker"><span class="style-orb" aria-hidden="true"></span><span>背景風格</span></button>
+          <div class="style-picker" id="stylePicker" hidden>
+            <div class="style-picker-head"><strong>選擇背景風格</strong><span>自動保存</span></div>
+            <div class="style-grid">
+              <button class="style-option" data-style="deep" type="button"><span class="style-preview deep"></span><span class="style-name">深海科技</span></button>
+              <button class="style-option" data-style="aurora" type="button"><span class="style-preview aurora"></span><span class="style-name">極光幻境</span></button>
+              <button class="style-option" data-style="neon" type="button"><span class="style-preview neon"></span><span class="style-name">霓虹夜城</span></button>
+              <button class="style-option" data-style="ember" type="button"><span class="style-preview ember"></span><span class="style-name">餘燼夕陽</span></button>
+              <button class="style-option" data-style="ocean" type="button"><span class="style-preview ocean"></span><span class="style-name">深藍海域</span></button>
+              <button class="style-option" data-style="mono" type="button"><span class="style-preview mono"></span><span class="style-name">極簡黑白</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
     </header>
 
     <section class="hero">
@@ -267,6 +313,9 @@
       'use strict';
       const COLORS = ['#68e8d5','#7b8cff','#ff88b7','#ffbd69','#69b8ff','#9fe870','#cf8cff','#ff7d72','#48d7ff','#ffd85c'];
       const DEFAULTS = ['第一個選項', '第二個選項', '第三個選項'];
+      const STYLES = ['deep','aurora','neon','ember','ocean','mono'];
+      const PEG_COUNT = 40;
+      const PEG_STEP = Math.PI * 2 / PEG_COUNT;
       const $ = id => document.getElementById(id);
       const els = {
         topic: $('topicInput'), option: $('optionInput'), add: $('addButton'), list: $('optionList'), count: $('optionCount'),
@@ -274,7 +323,8 @@
         help: $('wheelHelp'), topicDisplay: $('topicDisplay'), modal: $('resultModal'), resultTitle: $('resultTitle'),
         resultTopic: $('resultTopic'), closeResult: $('closeResult'), spinAgain: $('spinAgain'), toast: $('toast'),
         historyPanel: $('historyPanel'), historyList: $('historyList'), clearHistory: $('clearHistory'),
-        presetList: $('presetList'), newPreset: $('newPreset'), savePreset: $('savePreset')
+        presetList: $('presetList'), newPreset: $('newPreset'), savePreset: $('savePreset'),
+        styleToggle: $('styleToggle'), stylePicker: $('stylePicker')
       };
       const ctx = els.canvas.getContext('2d');
       let state = load();
@@ -288,9 +338,11 @@
       let lastDragTime = 0;
       let angularVelocity = 0;
       let releasePower = 0;
+      let pointerDeflection = 0;
+      let pointerSpringVelocity = 0;
 
       function uid() { return `${Date.now().toString(36)}${Math.random().toString(36).slice(2,7)}`; }
-      function fresh() { return { topic: '', options: DEFAULTS.map(text => ({ id: uid(), text, used: false })), noRepeat: false, history: [], presets: [], activePresetId: null }; }
+      function fresh() { return { topic: '', options: DEFAULTS.map(text => ({ id: uid(), text, used: false })), noRepeat: false, history: [], presets: [], activePresetId: null, style: 'deep' }; }
       function load() {
         try {
           const value = JSON.parse(localStorage.getItem('choice-decider-v1'));
@@ -298,7 +350,8 @@
             topic: value.topic || '', options: value.options, noRepeat: !!value.noRepeat,
             history: Array.isArray(value.history) ? value.history.slice(0, 12) : [],
             presets: Array.isArray(value.presets) ? value.presets : [],
-            activePresetId: value.activePresetId || null
+            activePresetId: value.activePresetId || null,
+            style: STYLES.includes(value.style) ? value.style : 'deep'
           };
         } catch (_) {}
         return fresh();
@@ -315,6 +368,16 @@
       function cleanText(value) { return value.replace(/\s+/g, ' ').trim().slice(0, 60); }
       function activeOptions() { return state.options.filter(o => o.text.trim() && (!state.noRepeat || !o.used)); }
       function distinctCount(options = activeOptions()) { return new Set(options.map(o => o.text.trim().toLocaleLowerCase())).size; }
+      function applyStyle(name, persist = false) {
+        const next = STYLES.includes(name) ? name : 'deep';
+        state.style = next; document.documentElement.dataset.style = next;
+        document.querySelectorAll('.style-option').forEach(button => button.classList.toggle('active', button.dataset.style === next));
+        if (persist) { save(); showToast(`已套用「${buttonStyleName(next)}」`); }
+      }
+      function buttonStyleName(name) {
+        return ({deep:'深海科技',aurora:'極光幻境',neon:'霓虹夜城',ember:'餘燼夕陽',ocean:'深藍海域',mono:'極簡黑白'})[name];
+      }
+      function closeStylePicker() { els.stylePicker.hidden = true; els.styleToggle.setAttribute('aria-expanded','false'); }
 
       function render() {
         els.topic.value = state.topic;
@@ -458,18 +521,18 @@
           ctx.restore();
         });
         ctx.beginPath(); ctx.arc(0,0,radius,0,Math.PI*2); ctx.strokeStyle = 'rgba(225,255,251,.75)'; ctx.lineWidth = 7; ctx.stroke();
-        options.forEach((_, i) => {
-          const angle = rotation + i * slice - Math.PI / 2;
+        for (let i=0; i<PEG_COUNT; i++) {
+          const angle = rotation + i * PEG_STEP - Math.PI / 2;
           const x = Math.cos(angle) * radius, y = Math.sin(angle) * radius;
           ctx.save();
           ctx.shadowColor = 'rgba(0,0,0,.65)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 5;
-          ctx.beginPath(); ctx.arc(x, y, options.length > 16 ? 8 : 12, 0, Math.PI * 2);
-          const peg = ctx.createRadialGradient(x-4,y-5,1,x,y,13);
+          ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2);
+          const peg = ctx.createRadialGradient(x-3,y-4,1,x,y,10);
           peg.addColorStop(0,'#ffffff'); peg.addColorStop(.38,'#d7e6ed'); peg.addColorStop(1,'#607789');
           ctx.fillStyle = peg; ctx.fill();
-          ctx.shadowColor = 'transparent'; ctx.strokeStyle = 'rgba(7,18,30,.8)'; ctx.lineWidth = 3; ctx.stroke();
+          ctx.shadowColor = 'transparent'; ctx.strokeStyle = 'rgba(7,18,30,.8)'; ctx.lineWidth = 2.5; ctx.stroke();
           ctx.restore();
-        });
+        }
         ctx.restore();
       }
       function shade(hex, amount) {
@@ -493,21 +556,36 @@
         return Math.atan2(event.clientY - (rect.top + rect.height/2), event.clientX - (rect.left + rect.width/2));
       }
       function setPointerAngle(degrees) { els.pointer.style.setProperty('--pointer-angle', `${Math.max(-34,Math.min(34,degrees))}deg`); }
-      function updatePointerPhysics(direction, speed) {
-        const options = activeOptions();
-        if (!options.length || !direction) { setPointerAngle(0); return; }
-        const slice = Math.PI * 2 / options.length;
-        const phase = mod(rotation / slice, 1);
-        const force = Math.min(1, Math.abs(speed) / .012);
-        let angle = 0;
+      function updatePointerPhysics(direction, speed, dt = 16) {
+        const phase = mod(rotation / PEG_STEP, 1);
+        const force = Math.max(.32,Math.min(1,Math.abs(speed)/.014));
+        let target = 0;
         if (direction > 0) {
-          if (phase > .68) angle = ((phase-.68)/.32) * (16+13*force);
-          else if (phase < .16) angle = -(1-phase/.16) * (4+5*force);
+          if (phase > .7) {
+            const p=(phase-.7)/.3, smooth=p*p*(3-2*p);
+            target=smooth*(13+16*force);
+          }
         } else {
-          if (phase < .32) angle = -(1-phase/.32) * (16+13*force);
-          else if (phase > .84) angle = ((phase-.84)/.16) * (4+5*force);
+          if (direction < 0 && phase < .3) {
+            const p=1-phase/.3, smooth=p*p*(3-2*p);
+            target=-smooth*(13+16*force);
+          }
         }
-        setPointerAngle(angle);
+        const step=Math.max(.25,Math.min(2,dt/16));
+        pointerSpringVelocity+=(target-pointerDeflection)*.25*step;
+        pointerSpringVelocity*=Math.pow(.6,step);
+        pointerDeflection+=pointerSpringVelocity*step;
+        setPointerAngle(pointerDeflection);
+      }
+      function relaxPointer(done) {
+        const started=performance.now(); let previous=started;
+        function relax(now) {
+          const dt=Math.min(32,now-previous); previous=now;
+          updatePointerPhysics(0,0,dt);
+          if (now-started<360 && (Math.abs(pointerDeflection)>.08 || Math.abs(pointerSpringVelocity)>.03)) animationId=requestAnimationFrame(relax);
+          else { pointerDeflection=0; pointerSpringVelocity=0; setPointerAngle(0); done(); }
+        }
+        animationId=requestAnimationFrame(relax);
       }
       function beginDrag(event) {
         if (spinning || !hasValidPool()) {
@@ -532,14 +610,14 @@
         const instantVelocity = delta/dt;
         angularVelocity = angularVelocity*.58 + instantVelocity*.42;
         lastDragAngle = angle; lastDragTime = now;
-        draw(); updatePointerPhysics(Math.sign(delta), instantVelocity);
+        draw(); updatePointerPhysics(Math.sign(delta), instantVelocity, dt);
       }
       function endDrag(event) {
         if (!dragging) return;
         dragging = false; els.wheelWrap.classList.remove('dragging');
         try { els.wheelWrap.releasePointerCapture?.(event.pointerId); } catch (_) {}
         if (!dragMoved || Math.abs(angularVelocity) < .00045) {
-          setPointerAngle(0); showToast('再甩快一點，輪盤才會轉起來'); return;
+          relaxPointer(()=>{}); showToast('再甩快一點，輪盤才會轉起來'); return;
         }
         startMomentum(angularVelocity);
       }
@@ -555,46 +633,42 @@
           const dt = Math.min(32, now-previous); previous = now;
           rotation += velocity*dt;
           velocity *= Math.pow(reduce ? .72 : .982, dt/16.67);
-          draw(); updatePointerPhysics(direction, velocity);
+          draw(); updatePointerPhysics(direction, velocity, dt);
           if (Math.abs(velocity) > (reduce ? .003 : .00072)) animationId = requestAnimationFrame(coast);
           else settleAtPeg(options, direction);
         }
         animationId = requestAnimationFrame(coast);
       }
       function settleAtPeg(options, direction) {
-        const slice = Math.PI*2/options.length;
+        const optionSlice = Math.PI*2/options.length;
         const boundary = direction > 0
-          ? Math.ceil((rotation+1e-7)/slice)*slice
-          : Math.floor((rotation-1e-7)/slice)*slice;
+          ? Math.ceil((rotation+1e-7)/PEG_STEP)*PEG_STEP
+          : Math.floor((rotation-1e-7)/PEG_STEP)*PEG_STEP;
         const startRotation = rotation;
-        const nearBoundary = boundary-direction*slice*.014;
+        const nearBoundary = boundary-direction*PEG_STEP*.025;
         const willCross = releasePower*.72 + Math.random()*.52 > .61;
         const finalRotation = willCross
-          ? boundary+direction*slice*(.12+Math.random()*.07)
-          : boundary-direction*slice*(.10+Math.random()*.07);
+          ? boundary+direction*PEG_STEP*(.20+Math.random()*.07)
+          : boundary-direction*PEG_STEP*(.18+Math.random()*.07);
         const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const duration = reduce ? 100 : 1050;
-        const start = performance.now();
+        const duration = reduce ? 100 : 1180;
+        const start = performance.now(); let previous=start;
         function suspense(now) {
+          const dt=Math.min(32,now-previous); previous=now;
           const t = Math.min(1,(now-start)/duration);
-          if (t < .58) {
-            rotation = startRotation+(nearBoundary-startRotation)*easeOutQuart(t/.58);
-          } else if (willCross) {
-            const p = easeInOutCubic((t-.58)/.42);
-            rotation = nearBoundary+(finalRotation-nearBoundary)*p;
-          } else if (t < .76) {
-            const p = easeOutQuart((t-.58)/.18);
-            rotation = nearBoundary+(boundary-direction*slice*.003-nearBoundary)*p;
+          if (t < .56) {
+            rotation = startRotation+(nearBoundary-startRotation)*easeOutQuart(t/.56);
           } else {
-            const p = easeOutQuart((t-.76)/.24);
-            rotation = (boundary-direction*slice*.003)+(finalRotation-(boundary-direction*slice*.003))*p;
+            const p=(t-.56)/.44;
+            const spring=Math.exp(-5.4*p)*Math.cos(p*Math.PI*2.15);
+            rotation=finalRotation+(nearBoundary-finalRotation)*spring;
           }
-          draw(); updatePointerPhysics(direction, .0015);
+          draw(); updatePointerPhysics(direction, .0015, dt);
           if (t < 1) animationId = requestAnimationFrame(suspense);
           else {
-            setPointerAngle(0);
-            const selectedIndex = Math.floor(mod(-rotation,Math.PI*2)/slice) % options.length;
-            finishSpin(options[selectedIndex]);
+            rotation=finalRotation; draw();
+            const selectedIndex = Math.floor(mod(-rotation,Math.PI*2)/optionSlice) % options.length;
+            relaxPointer(()=>finishSpin(options[selectedIndex]));
           }
         }
         animationId = requestAnimationFrame(suspense);
@@ -635,6 +709,14 @@
       els.add.addEventListener('click', () => addOptions(els.option.value));
       els.savePreset.addEventListener('click', saveCurrentPreset);
       els.newPreset.addEventListener('click', newPreset);
+      els.styleToggle.addEventListener('click', event => {
+        event.stopPropagation();
+        els.stylePicker.hidden = !els.stylePicker.hidden;
+        els.styleToggle.setAttribute('aria-expanded', String(!els.stylePicker.hidden));
+      });
+      document.querySelectorAll('.style-option').forEach(button => button.addEventListener('click', () => {
+        applyStyle(button.dataset.style, true); closeStylePicker();
+      }));
       els.option.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addOptions(els.option.value); } });
       els.option.addEventListener('paste', e => { const text = e.clipboardData.getData('text'); if (/\r?\n/.test(text)) { e.preventDefault(); addOptions(text); } });
       els.topic.addEventListener('input', e => { state.topic = e.target.value.slice(0,80); save(); els.topicDisplay.innerHTML = state.topic ? `正在決定：<strong>${escapeHtml(state.topic)}</strong>` : '等待你的選擇題'; });
@@ -649,10 +731,12 @@
       els.closeResult.addEventListener('click', closeModal);
       els.spinAgain.addEventListener('click', () => { closeModal(); setTimeout(() => els.wheelWrap.focus(), 120); });
       els.modal.addEventListener('click', e => { if (e.target === els.modal) closeModal(); });
+      document.addEventListener('click', e => { if (!e.target.closest('.style-control')) closeStylePicker(); });
       document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') closeModal();
+        if (e.key === 'Escape') { closeModal(); closeStylePicker(); }
       });
       window.addEventListener('resize', draw);
+      applyStyle(state.style);
       render();
     })();
   </script>
