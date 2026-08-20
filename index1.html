@@ -45,7 +45,7 @@
     }
     button, input, textarea { font: inherit; }
     button { color: inherit; }
-    .app { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 42px; position: relative; }
+    .app { width: min(1380px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 42px; position: relative; }
     header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
     .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: .02em; }
     .brand-mark { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 10px 30px rgba(104,232,213,.2); color: #06111d; }
@@ -55,9 +55,26 @@
     .eyebrow { color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
     h1 { margin: 12px 0 10px; font-size: clamp(36px, 6vw, 66px); line-height: 1.02; letter-spacing: -.055em; }
     .hero p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.8; }
-    .grid { display: grid; grid-template-columns: minmax(300px, .88fr) minmax(430px, 1.12fr); gap: 20px; align-items: start; }
-    .panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow); backdrop-filter: blur(20px); }
+    .grid { display: grid; grid-template-columns: 230px minmax(300px, .78fr) minmax(430px, 1.1fr); gap: 18px; align-items: start; }
+    .panel { min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow); backdrop-filter: blur(20px); }
     .setup { padding: 24px; }
+    .presets { padding: 16px; position: sticky; top: 20px; max-height: calc(100vh - 40px); display: flex; flex-direction: column; }
+    .presets-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 5px 4px 14px; }
+    .presets-head h2 { margin: 0; font-size: 16px; }
+    .presets-head p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+    .new-preset { width: 36px; height: 36px; flex: none; border: 1px solid var(--line); border-radius: 11px; background: rgba(255,255,255,.055); color: var(--accent); cursor: pointer; font-size: 20px; }
+    .preset-list { min-width: 0; max-width: 100%; display: grid; gap: 8px; overflow: auto; padding-right: 2px; }
+    .preset-card { display: grid; grid-template-columns: 1fr 30px; align-items: center; gap: 3px; border: 1px solid transparent; border-radius: 14px; background: rgba(255,255,255,.035); transition: .18s; }
+    .preset-card:hover { background: rgba(255,255,255,.06); }
+    .preset-card.active { border-color: rgba(104,232,213,.42); background: linear-gradient(120deg,rgba(104,232,213,.12),rgba(123,140,255,.08)); }
+    .preset-main { min-width: 0; padding: 12px 4px 12px 12px; text-align: left; border: 0; background: transparent; color: inherit; cursor: pointer; }
+    .preset-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 800; }
+    .preset-meta { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .delete-preset { width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; color: #667b97; cursor: pointer; font-size: 16px; }
+    .delete-preset:hover { color: var(--danger); background: rgba(255,118,146,.1); }
+    .preset-empty { padding: 22px 10px; border: 1px dashed var(--line); border-radius: 13px; color: var(--muted); font-size: 12px; line-height: 1.7; text-align: center; }
+    .save-preset { width: 100%; min-height: 46px; margin-top: 16px; border: 1px solid rgba(104,232,213,.32); border-radius: 13px; background: rgba(104,232,213,.09); color: var(--accent); font-weight: 800; cursor: pointer; }
+    .save-preset.saved { color: #b8c7d9; border-color: var(--line); background: rgba(255,255,255,.035); }
     .panel-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
     .panel-head h2 { font-size: 18px; margin: 0 0 5px; }
     .panel-head p { margin: 0; color: var(--muted); font-size: 13px; }
@@ -95,15 +112,16 @@
     .wheel-panel { padding: 24px; min-height: 620px; display: grid; place-items: center; position: sticky; top: 20px; overflow: hidden; }
     .topic { position: absolute; top: 24px; left: 24px; right: 24px; text-align: center; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .topic strong { color: var(--text); font-weight: 700; }
-    .wheel-wrap { width: min(500px, 100%); aspect-ratio: 1; position: relative; margin-top: 20px; filter: drop-shadow(0 28px 38px rgba(0,0,0,.4)); }
+    .wheel-wrap { width: min(500px, 100%); aspect-ratio: 1; position: relative; margin-top: 20px; filter: drop-shadow(0 28px 38px rgba(0,0,0,.4)); cursor: grab; touch-action: none; user-select: none; }
+    .wheel-wrap.dragging { cursor: grabbing; filter: drop-shadow(0 34px 44px rgba(0,0,0,.5)); }
+    .wheel-wrap.disabled { cursor: not-allowed; opacity: .58; }
     canvas { width: 100%; height: 100%; display: block; }
-    .pointer { position: absolute; z-index: 3; left: 50%; top: -4px; transform: translateX(-50%); width: 38px; height: 48px; filter: drop-shadow(0 6px 7px rgba(0,0,0,.45)); }
-    .pointer::before { content: ""; position: absolute; inset: 0; background: var(--text); clip-path: polygon(50% 100%, 2% 0, 98% 0); border-radius: 8px; }
-    .spin { position: absolute; z-index: 2; inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: 118px; height: 118px; border-radius: 50%; border: 8px solid rgba(4,13,24,.84); background: linear-gradient(145deg, #fbffff, #bfeee8); color: #071522; font-weight: 900; letter-spacing: .12em; cursor: pointer; box-shadow: 0 12px 28px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.8); transition: transform .2s, opacity .2s; }
-    .spin:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.045); }
-    .spin:active:not(:disabled) { transform: translate(-50%, -50%) scale(.98); }
-    .spin:disabled { cursor: not-allowed; opacity: .58; }
-    .spin small { display: block; margin-top: 3px; font-size: 9px; letter-spacing: .03em; color: #46606a; }
+    .pointer { --pointer-angle: 0deg; position: absolute; z-index: 4; left: 50%; top: -15px; transform: translateX(-50%) rotate(var(--pointer-angle)); transform-origin: 50% 10px; width: 46px; height: 68px; filter: drop-shadow(0 8px 9px rgba(0,0,0,.55)); will-change: transform; pointer-events: none; }
+    .pointer::before { content: ""; position: absolute; left: 8px; right: 8px; top: 11px; bottom: 0; background: linear-gradient(90deg, #a9bbc9, #ffffff 45%, #b8c9d4); clip-path: polygon(50% 100%, 4% 8%, 96% 8%); border-radius: 9px; }
+    .pointer::after { content: ""; position: absolute; left: 50%; top: 0; width: 20px; height: 20px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(circle at 36% 32%, #fff, #8ea5b6 42%, #33485c 72%); border: 3px solid #dcebf2; box-shadow: 0 2px 0 #263b50, 0 0 0 4px rgba(7,17,30,.7); }
+    .hub { position: absolute; z-index: 2; inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: 112px; height: 112px; border-radius: 50%; border: 8px solid rgba(4,13,24,.84); background: radial-gradient(circle at 38% 32%, #faffff, #9bdad2 52%, #43736f 100%); color: #071522; box-shadow: 0 12px 28px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.8); display: grid; place-items: center; text-align: center; font-weight: 900; letter-spacing: .1em; pointer-events: none; }
+    .hub small { display: block; margin-top: 3px; font-size: 9px; letter-spacing: .04em; color: #3f5b61; }
+    body.spinning .setup { pointer-events: none; opacity: .68; }
     .wheel-help { position: absolute; bottom: 23px; color: var(--muted); font-size: 12px; }
     .history-panel { margin-top: 20px; padding: 20px 24px; }
     .history-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -126,11 +144,20 @@
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
     .confetti { position: fixed; z-index: 25; width: 8px; height: 13px; border-radius: 2px; pointer-events: none; animation: fall 1.8s ease-in forwards; }
     @keyframes fall { to { transform: translate(var(--drift), 105vh) rotate(720deg); opacity: .2; } }
+    @media (max-width: 1120px) {
+      .app { width: min(100% - 24px, 900px); }
+      .grid { grid-template-columns: minmax(300px,.85fr) minmax(430px,1.15fr); }
+      .presets { grid-column: 1 / -1; position: static; max-height: none; }
+      .preset-list { display: flex; overflow-x: auto; padding-bottom: 2px; }
+      .preset-card { min-width: 190px; max-width: 240px; }
+      .preset-empty { width: 100%; }
+    }
     @media (max-width: 860px) {
       .app { width: min(100% - 20px, 640px); padding-top: 18px; }
       header { margin-bottom: 10px; }
       .hero { margin: 30px auto 24px; }
       .grid { grid-template-columns: 1fr; }
+      .presets { grid-column: auto; }
       .wheel-panel { min-height: auto; padding: 54px 18px 52px; position: relative; top: auto; }
       .wheel-wrap { max-width: 480px; }
     }
@@ -139,7 +166,7 @@
       .hero p { font-size: 14px; }
       .setup { padding: 18px; }
       .wheel-panel { padding-inline: 8px; }
-      .spin { width: 92px; height: 92px; border-width: 6px; font-size: 13px; }
+      .hub { width: 88px; height: 88px; border-width: 6px; font-size: 12px; }
       .result-actions { grid-template-columns: 1fr; }
       .settings { align-items: flex-start; }
     }
@@ -162,6 +189,14 @@
     </section>
 
     <section class="grid">
+      <aside class="panel presets" aria-label="我的題組">
+        <div class="presets-head">
+          <div><h2>我的題組</h2><p>儲存在這台裝置</p></div>
+          <button class="new-preset" id="newPreset" type="button" aria-label="建立新題組">＋</button>
+        </div>
+        <div class="preset-list" id="presetList"></div>
+      </aside>
+
       <div class="panel setup">
         <div class="panel-head">
           <div><h2>設定這次的選擇</h2><p>至少加入兩個不同選項</p></div>
@@ -184,6 +219,8 @@
 
         <div class="options" id="optionList" aria-live="polite"></div>
 
+        <button class="save-preset" id="savePreset" type="button">加入我的題組</button>
+
         <div class="settings">
           <label class="switch-label">
             <input id="noRepeat" type="checkbox">
@@ -197,10 +234,10 @@
 
       <div class="panel wheel-panel">
         <div class="topic" id="topicDisplay">等待你的選擇題</div>
-        <div class="wheel-wrap">
-          <div class="pointer" aria-hidden="true"></div>
+        <div class="wheel-wrap disabled" id="wheelWrap" role="application" tabindex="0" aria-label="拖曳選項輪盤後放開以轉動">
+          <div class="pointer" id="pointer" aria-hidden="true"></div>
           <canvas id="wheel" width="900" height="900" aria-label="選項輪盤"></canvas>
-          <button class="spin" id="spinButton" type="button" disabled>開始轉動<small>SPACE</small></button>
+          <div class="hub" aria-hidden="true">抓住甩動<small>DRAG & RELEASE</small></div>
         </div>
         <div class="wheel-help" id="wheelHelp">加入至少 2 個選項即可開始</div>
       </div>
@@ -219,7 +256,7 @@
       <h2 id="resultTitle"></h2>
       <div class="result-actions">
         <button class="secondary" id="closeResult" type="button">接受結果</button>
-        <button class="primary" id="spinAgain" type="button">再轉一次</button>
+        <button class="primary" id="spinAgain" type="button">不接受，再甩一次</button>
       </div>
     </div>
   </div>
@@ -233,10 +270,11 @@
       const $ = id => document.getElementById(id);
       const els = {
         topic: $('topicInput'), option: $('optionInput'), add: $('addButton'), list: $('optionList'), count: $('optionCount'),
-        noRepeat: $('noRepeat'), resetUsed: $('resetUsed'), clearAll: $('clearAll'), canvas: $('wheel'), spin: $('spinButton'),
+        noRepeat: $('noRepeat'), resetUsed: $('resetUsed'), clearAll: $('clearAll'), canvas: $('wheel'), wheelWrap: $('wheelWrap'), pointer: $('pointer'),
         help: $('wheelHelp'), topicDisplay: $('topicDisplay'), modal: $('resultModal'), resultTitle: $('resultTitle'),
         resultTopic: $('resultTopic'), closeResult: $('closeResult'), spinAgain: $('spinAgain'), toast: $('toast'),
-        historyPanel: $('historyPanel'), historyList: $('historyList'), clearHistory: $('clearHistory')
+        historyPanel: $('historyPanel'), historyList: $('historyList'), clearHistory: $('clearHistory'),
+        presetList: $('presetList'), newPreset: $('newPreset'), savePreset: $('savePreset')
       };
       const ctx = els.canvas.getContext('2d');
       let state = load();
@@ -244,17 +282,36 @@
       let spinning = false;
       let animationId = 0;
       let toastTimer = 0;
+      let dragging = false;
+      let dragMoved = false;
+      let lastDragAngle = 0;
+      let lastDragTime = 0;
+      let angularVelocity = 0;
+      let releasePower = 0;
 
       function uid() { return `${Date.now().toString(36)}${Math.random().toString(36).slice(2,7)}`; }
-      function fresh() { return { topic: '', options: DEFAULTS.map(text => ({ id: uid(), text, used: false })), noRepeat: false, history: [] }; }
+      function fresh() { return { topic: '', options: DEFAULTS.map(text => ({ id: uid(), text, used: false })), noRepeat: false, history: [], presets: [], activePresetId: null }; }
       function load() {
         try {
           const value = JSON.parse(localStorage.getItem('choice-decider-v1'));
-          if (value && Array.isArray(value.options)) return { topic: value.topic || '', options: value.options, noRepeat: !!value.noRepeat, history: Array.isArray(value.history) ? value.history.slice(0, 12) : [] };
+          if (value && Array.isArray(value.options)) return {
+            topic: value.topic || '', options: value.options, noRepeat: !!value.noRepeat,
+            history: Array.isArray(value.history) ? value.history.slice(0, 12) : [],
+            presets: Array.isArray(value.presets) ? value.presets : [],
+            activePresetId: value.activePresetId || null
+          };
         } catch (_) {}
         return fresh();
       }
-      function save() { localStorage.setItem('choice-decider-v1', JSON.stringify(state)); }
+      function syncActivePreset() {
+        if (!state.activePresetId) return;
+        const preset = state.presets.find(item => item.id === state.activePresetId);
+        if (!preset) { state.activePresetId = null; return; }
+        preset.topic = state.topic.replace(/\s+/g,' ').trim().slice(0,80);
+        preset.options = state.options.map(option => cleanText(option.text)).filter(Boolean);
+        preset.updatedAt = Date.now();
+      }
+      function save() { syncActivePreset(); localStorage.setItem('choice-decider-v1', JSON.stringify(state)); renderPresets(); }
       function cleanText(value) { return value.replace(/\s+/g, ' ').trim().slice(0, 60); }
       function activeOptions() { return state.options.filter(o => o.text.trim() && (!state.noRepeat || !o.used)); }
       function distinctCount(options = activeOptions()) { return new Set(options.map(o => o.text.trim().toLocaleLowerCase())).size; }
@@ -283,6 +340,9 @@
         const usedCount = state.options.filter(o => o.used).length;
         els.resetUsed.hidden = !state.noRepeat || usedCount === 0;
         els.clearAll.hidden = state.options.length === 0;
+        els.savePreset.textContent = state.activePresetId ? '已加入題組・變更自動儲存' : '加入我的題組';
+        els.savePreset.classList.toggle('saved', !!state.activePresetId);
+        renderPresets();
         renderHistory();
         updateAvailability();
         draw();
@@ -308,17 +368,67 @@
       function removeOption(id) { state.options = state.options.filter(o => o.id !== id); save(); render(); }
       function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
 
+      function renderPresets() {
+        if (!els.presetList) return;
+        if (!state.presets.length) {
+          els.presetList.innerHTML = '<div class="preset-empty">完成問題與選項後，按下「加入我的題組」即可保存在這裡。</div>';
+          return;
+        }
+        els.presetList.innerHTML = '';
+        state.presets.forEach(preset => {
+          const card = document.createElement('div');
+          card.className = `preset-card${preset.id === state.activePresetId ? ' active' : ''}`;
+          card.innerHTML = `<button class="preset-main" type="button"><span class="preset-name">${escapeHtml(preset.topic || '未命名題組')}</span><span class="preset-meta">${preset.options.length} 個選項</span></button><button class="delete-preset" type="button" aria-label="刪除 ${escapeHtml(preset.topic || '未命名題組')}">×</button>`;
+          card.querySelector('.preset-main').addEventListener('click', () => selectPreset(preset.id));
+          card.querySelector('.delete-preset').addEventListener('click', () => deletePreset(preset.id));
+          els.presetList.appendChild(card);
+        });
+      }
+      function saveCurrentPreset() {
+        if (state.activePresetId) { save(); showToast('這組題目已是自動儲存狀態'); return; }
+        const topic = state.topic.replace(/\s+/g,' ').trim();
+        const options = state.options.map(option => cleanText(option.text)).filter(Boolean);
+        if (!topic) { showToast('請先輸入要決定的問題'); els.topic.focus(); return; }
+        if (distinctCount(state.options.filter(o=>o.text.trim())) < 2) { showToast('請先加入至少 2 個不同選項'); els.option.focus(); return; }
+        const preset = { id: uid(), topic, options, updatedAt: Date.now() };
+        state.presets.unshift(preset); state.activePresetId = preset.id;
+        save(); render(); showToast('已加入我的題組，後續變更會自動儲存');
+      }
+      function selectPreset(id) {
+        if (spinning || id === state.activePresetId) return;
+        const preset = state.presets.find(item => item.id === id);
+        if (!preset) return;
+        state.activePresetId = id; state.topic = preset.topic;
+        state.options = preset.options.map(text => ({id:uid(),text,used:false}));
+        rotation = 0; save(); render(); showToast(`已切換至「${preset.topic}」`);
+      }
+      function newPreset() {
+        if (spinning) return;
+        const starter = !state.topic.trim() && state.options.map(o=>o.text).join('|') === DEFAULTS.join('|');
+        const unsaved = !state.activePresetId && !starter && (state.topic.trim() || state.options.some(o=>o.text.trim()));
+        if (unsaved && !confirm('目前內容尚未加入「我的題組」，仍要建立新題組嗎？')) return;
+        state.activePresetId = null; state.topic = ''; state.options = []; rotation = 0;
+        save(); render(); els.topic.focus();
+      }
+      function deletePreset(id) {
+        const preset = state.presets.find(item => item.id === id);
+        if (!preset || !confirm(`要從「我的題組」刪除「${preset.topic}」嗎？`)) return;
+        state.presets = state.presets.filter(item => item.id !== id);
+        if (state.activePresetId === id) state.activePresetId = null;
+        save(); render(); showToast('題組已刪除，目前編輯內容仍保留');
+      }
+
       function updateAvailability() {
         const active = activeOptions();
         const hasValidPool = state.noRepeat
           ? distinctCount(state.options.filter(o => o.text.trim())) >= 2 && active.length >= 1
           : distinctCount(active) >= 2;
-        const canSpin = hasValidPool && !spinning;
-        els.spin.disabled = !canSpin;
-        if (spinning) els.help.textContent = '正在替你排除猶豫…';
-        else if (state.noRepeat && active.length < 2 && state.options.length >= 2) els.help.textContent = '本輪已抽完，點「恢復全部」重新開始';
-        else if (distinctCount(active) < 2) els.help.textContent = '加入至少 2 個不同選項即可開始';
-        else els.help.textContent = `${active.length} 個候選項・每個機會相同`;
+        els.wheelWrap.classList.toggle('disabled', !hasValidPool || spinning);
+        els.wheelWrap.setAttribute('aria-disabled', String(!hasValidPool || spinning));
+        if (spinning) els.help.textContent = '指針正在與最後幾根隔針拉扯…';
+        else if (state.noRepeat && active.length === 0 && state.options.length >= 2) els.help.textContent = '本輪已抽完，點「恢復全部」重新開始';
+        else if ((!state.noRepeat && distinctCount(active) < 2) || (state.noRepeat && distinctCount(state.options.filter(o=>o.text.trim())) < 2)) els.help.textContent = '加入至少 2 個不同選項即可開始';
+        else els.help.textContent = `${active.length} 個候選項・抓住輪盤快速甩動後放開`;
       }
 
       function draw() {
@@ -348,6 +458,18 @@
           ctx.restore();
         });
         ctx.beginPath(); ctx.arc(0,0,radius,0,Math.PI*2); ctx.strokeStyle = 'rgba(225,255,251,.75)'; ctx.lineWidth = 7; ctx.stroke();
+        options.forEach((_, i) => {
+          const angle = rotation + i * slice - Math.PI / 2;
+          const x = Math.cos(angle) * radius, y = Math.sin(angle) * radius;
+          ctx.save();
+          ctx.shadowColor = 'rgba(0,0,0,.65)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 5;
+          ctx.beginPath(); ctx.arc(x, y, options.length > 16 ? 8 : 12, 0, Math.PI * 2);
+          const peg = ctx.createRadialGradient(x-4,y-5,1,x,y,13);
+          peg.addColorStop(0,'#ffffff'); peg.addColorStop(.38,'#d7e6ed'); peg.addColorStop(1,'#607789');
+          ctx.fillStyle = peg; ctx.fill();
+          ctx.shadowColor = 'transparent'; ctx.strokeStyle = 'rgba(7,18,30,.8)'; ctx.lineWidth = 3; ctx.stroke();
+          ctx.restore();
+        });
         ctx.restore();
       }
       function shade(hex, amount) {
@@ -356,37 +478,130 @@
         return `rgb(${r},${g},${b})`;
       }
       function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
+      function easeInOutCubic(t) { return t < .5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+      function mod(value, divisor) { return ((value % divisor) + divisor) % divisor; }
+      function normalizeAngle(angle) { return mod(angle + Math.PI, Math.PI * 2) - Math.PI; }
 
-      function spin() {
+      function hasValidPool() {
         const available = activeOptions();
-        const hasValidPool = state.noRepeat
+        return state.noRepeat
           ? distinctCount(state.options.filter(o => o.text.trim())) >= 2 && available.length >= 1
           : distinctCount(available) >= 2;
-        if (spinning || !hasValidPool) return;
-        closeModal();
-        const options = available;
-        const selectedIndex = Math.floor(Math.random() * options.length);
+      }
+      function pointerAngle(event) {
+        const rect = els.wheelWrap.getBoundingClientRect();
+        return Math.atan2(event.clientY - (rect.top + rect.height/2), event.clientX - (rect.left + rect.width/2));
+      }
+      function setPointerAngle(degrees) { els.pointer.style.setProperty('--pointer-angle', `${Math.max(-34,Math.min(34,degrees))}deg`); }
+      function updatePointerPhysics(direction, speed) {
+        const options = activeOptions();
+        if (!options.length || !direction) { setPointerAngle(0); return; }
         const slice = Math.PI * 2 / options.length;
-        const desired = -(selectedIndex + .5) * slice;
-        const currentNorm = ((rotation % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
-        const desiredNorm = ((desired % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
-        const extra = ((desiredNorm - currentNorm + Math.PI*2) % (Math.PI*2)) + Math.PI*2 * (5 + Math.floor(Math.random()*3));
-        const startRotation = rotation, endRotation = rotation + extra;
-        const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const duration = reduce ? 120 : 4400;
-        const start = performance.now();
-        spinning = true; updateAvailability();
-        function frame(now) {
-          const t = Math.min(1, (now-start)/duration);
-          rotation = startRotation + (endRotation-startRotation) * easeOutQuart(t);
-          draw();
-          if (t < 1) animationId = requestAnimationFrame(frame);
-          else finishSpin(options[selectedIndex]);
+        const phase = mod(rotation / slice, 1);
+        const force = Math.min(1, Math.abs(speed) / .012);
+        let angle = 0;
+        if (direction > 0) {
+          if (phase > .68) angle = ((phase-.68)/.32) * (16+13*force);
+          else if (phase < .16) angle = -(1-phase/.16) * (4+5*force);
+        } else {
+          if (phase < .32) angle = -(1-phase/.32) * (16+13*force);
+          else if (phase > .84) angle = ((phase-.84)/.16) * (4+5*force);
         }
-        animationId = requestAnimationFrame(frame);
+        setPointerAngle(angle);
+      }
+      function beginDrag(event) {
+        if (spinning || !hasValidPool()) {
+          if (!spinning) showToast('請先加入至少 2 個不同選項');
+          return;
+        }
+        closeModal();
+        cancelAnimationFrame(animationId);
+        dragging = true; dragMoved = false; angularVelocity = 0;
+        lastDragAngle = pointerAngle(event); lastDragTime = performance.now();
+        els.wheelWrap.classList.add('dragging');
+        els.wheelWrap.setPointerCapture?.(event.pointerId);
+      }
+      function moveDrag(event) {
+        if (!dragging) return;
+        const now = performance.now();
+        const angle = pointerAngle(event);
+        const delta = Math.max(-.55, Math.min(.55, normalizeAngle(angle-lastDragAngle)));
+        const dt = Math.max(8, now-lastDragTime);
+        if (Math.abs(delta) > .002) dragMoved = true;
+        rotation += delta;
+        const instantVelocity = delta/dt;
+        angularVelocity = angularVelocity*.58 + instantVelocity*.42;
+        lastDragAngle = angle; lastDragTime = now;
+        draw(); updatePointerPhysics(Math.sign(delta), instantVelocity);
+      }
+      function endDrag(event) {
+        if (!dragging) return;
+        dragging = false; els.wheelWrap.classList.remove('dragging');
+        try { els.wheelWrap.releasePointerCapture?.(event.pointerId); } catch (_) {}
+        if (!dragMoved || Math.abs(angularVelocity) < .00045) {
+          setPointerAngle(0); showToast('再甩快一點，輪盤才會轉起來'); return;
+        }
+        startMomentum(angularVelocity);
+      }
+      function startMomentum(initialVelocity) {
+        const options = activeOptions();
+        let velocity = Math.max(-.055, Math.min(.055, initialVelocity*1.8));
+        const direction = Math.sign(velocity) || 1;
+        releasePower = Math.min(1, Math.abs(velocity)/.028);
+        const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        let previous = performance.now();
+        spinning = true; document.body.classList.add('spinning'); updateAvailability();
+        function coast(now) {
+          const dt = Math.min(32, now-previous); previous = now;
+          rotation += velocity*dt;
+          velocity *= Math.pow(reduce ? .72 : .982, dt/16.67);
+          draw(); updatePointerPhysics(direction, velocity);
+          if (Math.abs(velocity) > (reduce ? .003 : .00072)) animationId = requestAnimationFrame(coast);
+          else settleAtPeg(options, direction);
+        }
+        animationId = requestAnimationFrame(coast);
+      }
+      function settleAtPeg(options, direction) {
+        const slice = Math.PI*2/options.length;
+        const boundary = direction > 0
+          ? Math.ceil((rotation+1e-7)/slice)*slice
+          : Math.floor((rotation-1e-7)/slice)*slice;
+        const startRotation = rotation;
+        const nearBoundary = boundary-direction*slice*.014;
+        const willCross = releasePower*.72 + Math.random()*.52 > .61;
+        const finalRotation = willCross
+          ? boundary+direction*slice*(.12+Math.random()*.07)
+          : boundary-direction*slice*(.10+Math.random()*.07);
+        const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const duration = reduce ? 100 : 1050;
+        const start = performance.now();
+        function suspense(now) {
+          const t = Math.min(1,(now-start)/duration);
+          if (t < .58) {
+            rotation = startRotation+(nearBoundary-startRotation)*easeOutQuart(t/.58);
+          } else if (willCross) {
+            const p = easeInOutCubic((t-.58)/.42);
+            rotation = nearBoundary+(finalRotation-nearBoundary)*p;
+          } else if (t < .76) {
+            const p = easeOutQuart((t-.58)/.18);
+            rotation = nearBoundary+(boundary-direction*slice*.003-nearBoundary)*p;
+          } else {
+            const p = easeOutQuart((t-.76)/.24);
+            rotation = (boundary-direction*slice*.003)+(finalRotation-(boundary-direction*slice*.003))*p;
+          }
+          draw(); updatePointerPhysics(direction, .0015);
+          if (t < 1) animationId = requestAnimationFrame(suspense);
+          else {
+            setPointerAngle(0);
+            const selectedIndex = Math.floor(mod(-rotation,Math.PI*2)/slice) % options.length;
+            finishSpin(options[selectedIndex]);
+          }
+        }
+        animationId = requestAnimationFrame(suspense);
       }
       function finishSpin(selected) {
         spinning = false;
+        document.body.classList.remove('spinning');
         if (state.noRepeat) {
           const original = state.options.find(o => o.id === selected.id);
           if (original) original.used = true;
@@ -418,6 +633,8 @@
       }
 
       els.add.addEventListener('click', () => addOptions(els.option.value));
+      els.savePreset.addEventListener('click', saveCurrentPreset);
+      els.newPreset.addEventListener('click', newPreset);
       els.option.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addOptions(els.option.value); } });
       els.option.addEventListener('paste', e => { const text = e.clipboardData.getData('text'); if (/\r?\n/.test(text)) { e.preventDefault(); addOptions(text); } });
       els.topic.addEventListener('input', e => { state.topic = e.target.value.slice(0,80); save(); els.topicDisplay.innerHTML = state.topic ? `正在決定：<strong>${escapeHtml(state.topic)}</strong>` : '等待你的選擇題'; });
@@ -425,13 +642,15 @@
       els.resetUsed.addEventListener('click', () => { state.options.forEach(o=>o.used=false); save(); render(); showToast('所有選項已恢復'); });
       els.clearAll.addEventListener('click', () => { if (!state.options.length || confirm('要清除所有選項嗎？')) { state.options=[]; save(); render(); els.option.focus(); } });
       els.clearHistory.addEventListener('click', () => { state.history=[]; save(); renderHistory(); });
-      els.spin.addEventListener('click', spin);
+      els.wheelWrap.addEventListener('pointerdown', beginDrag);
+      els.wheelWrap.addEventListener('pointermove', moveDrag);
+      els.wheelWrap.addEventListener('pointerup', endDrag);
+      els.wheelWrap.addEventListener('pointercancel', endDrag);
       els.closeResult.addEventListener('click', closeModal);
-      els.spinAgain.addEventListener('click', () => { closeModal(); setTimeout(spin, 180); });
+      els.spinAgain.addEventListener('click', () => { closeModal(); setTimeout(() => els.wheelWrap.focus(), 120); });
       els.modal.addEventListener('click', e => { if (e.target === els.modal) closeModal(); });
       document.addEventListener('keydown', e => {
         if (e.key === 'Escape') closeModal();
-        if (e.code === 'Space' && !['INPUT','TEXTAREA','BUTTON'].includes(document.activeElement.tagName)) { e.preventDefault(); spin(); }
       });
       window.addEventListener('resize', draw);
       render();
