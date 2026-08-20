@@ -553,8 +553,9 @@
           }
         });
         ctx.beginPath(); ctx.arc(0,0,radius,0,Math.PI*2); ctx.strokeStyle = 'rgba(225,255,251,.75)'; ctx.lineWidth = 7; ctx.stroke();
-        for (let i=0; i<PEG_COUNT; i++) {
-          const angle = rotation + i * PEG_STEP - Math.PI / 2;
+        const pegAngles=pegAnglesFor(options);
+        for (const pegAngle of pegAngles) {
+          const angle = rotation + pegAngle - Math.PI / 2;
           const x = Math.cos(angle) * radius, y = Math.sin(angle) * radius;
           ctx.save();
           ctx.shadowColor = 'rgba(0,0,0,.65)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 5;
@@ -585,6 +586,29 @@
         }
         return 0;
       }
+      function pegAnglesFor(options) {
+        if(!options.length) return [];
+        const total=options.reduce((sum,option)=>sum+normalizeWeight(option.weight),0);
+        const angles=[]; let start=0;
+        options.forEach(option=>{
+          const segment=Math.PI*2*normalizeWeight(option.weight)/total;
+          const intervals=Math.max(1,Math.round(segment/PEG_STEP));
+          for(let index=0;index<intervals;index++) angles.push(mod(start+segment*index/intervals,Math.PI*2));
+          start+=segment;
+        });
+        return angles.sort((a,b)=>a-b);
+      }
+      function nextPegRotation(options,direction) {
+        const full=Math.PI*2, angles=pegAnglesFor(options);
+        let best=direction>0?Infinity:-Infinity;
+        angles.forEach(angle=>{
+          const base=-angle;
+          let candidate;
+          if(direction>0){candidate=base+Math.ceil((rotation-base+1e-8)/full)*full;if(candidate<=rotation+1e-8)candidate+=full;best=Math.min(best,candidate);}
+          else{candidate=base+Math.floor((rotation-base-1e-8)/full)*full;if(candidate>=rotation-1e-8)candidate-=full;best=Math.max(best,candidate);}
+        });
+        return best;
+      }
 
       function hasValidPool() {
         const available = activeOptions();
@@ -598,19 +622,16 @@
       }
       function setPointerAngle(degrees) { els.pointer.style.setProperty('--pointer-angle', `${Math.max(-34,Math.min(34,degrees))}deg`); }
       function updatePointerPhysics(direction, speed, dt = 16) {
-        const phase = mod(rotation / PEG_STEP, 1);
         const force = Math.max(.32,Math.min(1,Math.abs(speed)/.014));
-        let target = 0;
-        if (direction > 0) {
-          if (phase > .7) {
-            const p=(phase-.7)/.3, smooth=p*p*(3-2*p);
-            target=smooth*(13+16*force);
-          }
-        } else {
-          if (direction < 0 && phase < .3) {
-            const p=1-phase/.3, smooth=p*p*(3-2*p);
-            target=-smooth*(13+16*force);
-          }
+        const contactRange=PEG_STEP*.31;
+        const positions=pegAnglesFor(activeOptions()).map(angle=>normalizeAngle(rotation+angle));
+        let target=0;
+        if(direction>0){
+          const approaching=positions.filter(position=>position<=0).sort((a,b)=>b-a)[0];
+          if(approaching!==undefined && approaching>=-contactRange){const p=1-Math.abs(approaching)/contactRange,smooth=p*p*(3-2*p);target=smooth*(13+16*force);}
+        }else if(direction<0){
+          const approaching=positions.filter(position=>position>=0).sort((a,b)=>a-b)[0];
+          if(approaching!==undefined && approaching<=contactRange){const p=1-approaching/contactRange,smooth=p*p*(3-2*p);target=-smooth*(13+16*force);}
         }
         const step=Math.max(.25,Math.min(2,dt/16));
         pointerSpringVelocity+=(target-pointerDeflection)*.25*step;
@@ -671,9 +692,9 @@
         let previous = performance.now();
         spinning = true; document.body.classList.add('spinning'); updateAvailability();
         function coast(now) {
-          const dt = Math.min(32, now-previous); previous = now;
+          const elapsed=Math.max(1,now-previous), dt=Math.min(32,elapsed); previous = now;
           rotation += velocity*dt;
-          velocity *= Math.pow(reduce ? .72 : .982, dt/16.67);
+          velocity *= Math.pow(reduce ? .72 : .982, elapsed/16.67);
           draw(); updatePointerPhysics(direction, velocity, dt);
           if (Math.abs(velocity) > (reduce ? .003 : .00072)) animationId = requestAnimationFrame(coast);
           else settleAtPeg(options, direction);
@@ -681,15 +702,14 @@
         animationId = requestAnimationFrame(coast);
       }
       function settleAtPeg(options, direction) {
-        const boundary = direction > 0
-          ? Math.ceil((rotation+1e-7)/PEG_STEP)*PEG_STEP
-          : Math.floor((rotation-1e-7)/PEG_STEP)*PEG_STEP;
+        const boundary=nextPegRotation(options,direction);
+        const pegSpacing=Math.PI*2/pegAnglesFor(options).length;
         const startRotation = rotation;
-        const nearBoundary = boundary-direction*PEG_STEP*.025;
+        const nearBoundary = boundary-direction*pegSpacing*.025;
         const willCross = releasePower*.72 + Math.random()*.52 > .61;
         const finalRotation = willCross
-          ? boundary+direction*PEG_STEP*(.20+Math.random()*.07)
-          : boundary-direction*PEG_STEP*(.18+Math.random()*.07);
+          ? boundary+direction*pegSpacing*(.20+Math.random()*.07)
+          : boundary-direction*pegSpacing*(.18+Math.random()*.07);
         const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
         const duration = reduce ? 100 : 1180;
         const start = performance.now(); let previous=start;
