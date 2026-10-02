@@ -501,6 +501,31 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
         let isDrawing = false;
         let startX = 0, startY = 0;
         let viewportScale = 1.5; 
+        let currentEditViewport = null;
+
+        function getOverlayCanvasPoint(event) {
+            const rect = overlayCanvas.getBoundingClientRect();
+            if (!rect.width || !rect.height) return { x: 0, y: 0 };
+
+            // The canvas can be resized by CSS inside the editor. Mouse coordinates are
+            // expressed in CSS pixels, while PDF.js viewport coordinates use canvas pixels.
+            return {
+                x: (event.clientX - rect.left) * (overlayCanvas.width / rect.width),
+                y: (event.clientY - rect.top) * (overlayCanvas.height / rect.height)
+            };
+        }
+
+        function viewportRectToPdfRect(x1, y1, x2, y2) {
+            if (!currentEditViewport) return null;
+            const [pdfX1, pdfY1] = currentEditViewport.convertToPdfPoint(x1, y1);
+            const [pdfX2, pdfY2] = currentEditViewport.convertToPdfPoint(x2, y2);
+            return {
+                x: Math.min(pdfX1, pdfX2),
+                y: Math.min(pdfY1, pdfY2),
+                w: Math.abs(pdfX2 - pdfX1),
+                h: Math.abs(pdfY2 - pdfY1)
+            };
+        }
 
         function setTool(tool) {
             currentTool = tool;
@@ -537,6 +562,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             const viewportObj = page.getViewport({scale: 1.0});
             viewportScale = Math.min(2.0, (window.innerHeight * 0.8) / viewportObj.height);
             const viewport = page.getViewport({scale: viewportScale});
+            currentEditViewport = viewport;
 
             baseCanvas.width = overlayCanvas.width = viewport.width;
             baseCanvas.height = overlayCanvas.height = viewport.height;
@@ -596,16 +622,16 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
         overlayCanvas.addEventListener('mousedown', (e) => {
             if (currentTool !== 'whiteout') return;
             isDrawing = true;
-            const rect = overlayCanvas.getBoundingClientRect();
-            startX = e.clientX - rect.left;
-            startY = e.clientY - rect.top;
+            const point = getOverlayCanvasPoint(e);
+            startX = point.x;
+            startY = point.y;
         });
 
         overlayCanvas.addEventListener('mousemove', (e) => {
             if (!isDrawing || currentTool !== 'whiteout') return;
-            const rect = overlayCanvas.getBoundingClientRect();
-            const currentX = e.clientX - rect.left;
-            const currentY = e.clientY - rect.top;
+            const point = getOverlayCanvasPoint(e);
+            const currentX = point.x;
+            const currentY = point.y;
             
             redrawOverlay(); 
             
@@ -617,9 +643,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
         });
 
         overlayCanvas.addEventListener('mouseup', (e) => {
-            const rect = overlayCanvas.getBoundingClientRect();
-            const endX = e.clientX - rect.left;
-            const endY = e.clientY - rect.top;
+            const point = getOverlayCanvasPoint(e);
+            const endX = point.x;
+            const endY = point.y;
 
             if (currentTool === 'whiteout' && isDrawing) {
                 isDrawing = false;
@@ -627,19 +653,11 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
                 const height = endY - startY;
                 
                 if (Math.abs(width) > 5 && Math.abs(height) > 5) {
-                    const pdfX = Math.min(startX, endX) / viewportScale;
-                    const pdfW = Math.abs(width) / viewportScale;
-                    const pdfH = Math.abs(height) / viewportScale;
-                    const pdfY_TopFromBottom = (overlayCanvas.height - Math.min(startY, endY)) / viewportScale; 
+                    const pdfRect = viewportRectToPdfRect(startX, startY, endX, endY);
 
-                    pageEdits[activeEditPageIdx].push({
+                    if (pdfRect && pdfRect.w > 0 && pdfRect.h > 0) pageEdits[activeEditPageIdx].push({
                         type: 'whiteout',
-                        data: {
-                            x: pdfX,
-                            y: pdfY_TopFromBottom - pdfH, 
-                            w: pdfW,
-                            h: pdfH
-                        }
+                        data: pdfRect
                     });
                 }
                 redrawOverlay();
@@ -676,10 +694,13 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
             edits.forEach(edit => {
                 if (edit.type === 'whiteout') {
                     const rect = edit.data;
-                    const cvsX = rect.x * viewportScale;
-                    const cvsW = rect.w * viewportScale;
-                    const cvsH = rect.h * viewportScale;
-                    const cvsY = overlayCanvas.height - ((rect.y + rect.h) * viewportScale);
+                    const viewportRect = currentEditViewport.convertToViewportRectangle([
+                        rect.x, rect.y, rect.x + rect.w, rect.y + rect.h
+                    ]);
+                    const cvsX = Math.min(viewportRect[0], viewportRect[2]);
+                    const cvsY = Math.min(viewportRect[1], viewportRect[3]);
+                    const cvsW = Math.abs(viewportRect[2] - viewportRect[0]);
+                    const cvsH = Math.abs(viewportRect[3] - viewportRect[1]);
 
                     overlayCtx.fillStyle = 'white';
                     overlayCtx.fillRect(cvsX, cvsY, cvsW, cvsH);
